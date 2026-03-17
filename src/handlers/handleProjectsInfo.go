@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func HandleProjectsInfo(w http.ResponseWriter, r *http.Request) {
+func HandleGETProjects(w http.ResponseWriter, r *http.Request) {
 	email, ok := utils.GetEmailFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
@@ -23,5 +23,20 @@ func HandleProjectsInfo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(projList)
+
+}
+
+func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
+	// email, ok := utils.GetEmailFromContext(r.Context())
+	// if !ok {
+	// 	http.Error(w, "Unable to get projects", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// json.NewDecoder
+
+}
+
+func HandleDELETEProject(w http.ResponseWriter, r *http.Request) {
 
 }

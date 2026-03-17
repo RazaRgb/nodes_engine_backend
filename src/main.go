@@ -33,7 +33,10 @@ func main() {
 	mux.Handle("/api/graph", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGraph)))
 	mux.Handle("/api/getuser", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGetUser)))
 	mux.Handle("/api/run", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleRun)))
-	mux.Handle("/api/projinfo", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleProjectsInfo)))
+
+	mux.Handle("GET /api/projects", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjects)))
+	mux.Handle("POST /api/projects", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandlePOSTProject)))
+	mux.Handle("DELETE /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleDELETEProject)))
 
 	PORT := os.Getenv("PORT")
 	fmt.Printf("server listening at port %s \n", PORT)
