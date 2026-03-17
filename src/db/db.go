@@ -184,20 +184,20 @@ func InsertProject(newProject models.Project) (models.Project, error) {
 		fmt.Printf("error while inserting project into db %+v \n", err)
 		return newProject, err
 	}
-	return newProject , nil
+	return newProject, nil
 }
 
 func DeleteProject(projectID string, email string) error {
-	deleteQuery :=	`
+	deleteQuery := `
 	DELETE FROM projects
 	WHERE id = $1 AND owner = $2
 	`
-	result ,err := DB.Exec(
+	result, err := DB.Exec(
 		context.Background(),
 		deleteQuery,
 		projectID,
 		email,
-		)
+	)
 	if err != nil {
 		fmt.Printf("unable to delete project %+v\n", err)
 		return err
