@@ -122,7 +122,7 @@ func GetUser(email string) (models.User, error) {
 func GetProjectsInfo(email string) ([]models.Project, error) {
 
 	selectQuery := `
-	SELECT name, creation_date, last_modified
+	SELECT id, name, creation_date, last_modified
 	FROM projects
 	WHERE owner = $1
 	`
@@ -144,6 +144,7 @@ func GetProjectsInfo(email string) ([]models.Project, error) {
 
 		var proj models.Project
 		err := rows.Scan(
+			&proj.ID,
 			&proj.Name,
 			&proj.CreationDate,
 			&proj.LastModified,

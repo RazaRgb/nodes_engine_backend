@@ -43,7 +43,6 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		Email:          email,
 	}
 
-	// TODO:
 	err = db.InsertUser(user)
 	if err != nil {
 		fmt.Printf("user insertion in DB failed %v", err)
