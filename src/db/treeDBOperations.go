@@ -4,6 +4,8 @@ import (
 	"backend/src/models"
 	"context"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func GetTreeFromDB(treeID string) models.Tree {
@@ -84,36 +86,59 @@ func getEdgesFromDB(treeID string) []models.Edge {
 	return edges
 }
 
-func ClearTreeContent(treeID string) {
-	clearQuery := `DELETE FROM nodes WHERE belongs_to = $1`
-	_, err := DB.Exec(
-		context.Background(),
-		clearQuery,
-		treeID,
-	)
-	if err != nil {
-		fmt.Printf("unable to clear tree for updation: %+v\n", err)
+// ------------------------------------------
+
+func ClearTreeContent(treeID string) error {
+	err := runInTransaction(func(tx pgx.Tx) error{
+		clearQuery := `DELETE FROM nodes WHERE belongs_to = $1`
+		_, err := tx.Exec(
+			context.Background(),
+			clearQuery,
+			treeID,
+		)
+		if err != nil {
+			fmt.Printf("unable to clear tree for updation: %+v\n", err)
+			return err
+		}
+		return nil
+	})
+	if err!=nil{
+		return err
 	}
+	return nil
 }
 
-func InsertTreeInDB(updatedTree models.Tree) {
-	edgeArray := updatedTree.Edges
-	nodeArray := updatedTree.Nodes
+func InsertTreeInDB(updatedTree models.Tree) error{
+	err := runInTransaction(func(tx pgx.Tx) error {
+		edgeArray := updatedTree.Edges
+		nodeArray := updatedTree.Nodes
 
-	for _, node := range nodeArray {
-		saveNodeToDB(node, updatedTree.ID)
+		for _, node := range nodeArray {
+			err := saveNodeToDB(node, updatedTree.ID, tx)
+			if err != nil {
+				return err
+			}
+		}
+		for _, edge := range edgeArray {
+			err := saveEdgesToDB(edge, tx)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+		})
+	if err != nil{
+		return err
 	}
-	for _, edge := range edgeArray {
-		saveEdgesToDB(edge)
-	}
+	return nil
 }
 
-func saveNodeToDB(node models.Node, treeID string) {
+func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 	insertNodeQuery := `
 	INSERT INTO nodes (belongs_to, id, type, pos_x, pos_y, label)
 	VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	_, err := DB.Exec(
+	_, err := tx.Exec(
 		context.Background(),
 		insertNodeQuery,
 		treeID,
@@ -125,18 +150,21 @@ func saveNodeToDB(node models.Node, treeID string) {
 	)
 	if err != nil {
 		fmt.Printf("Failed to execute node INSERT \n %+v\n", err)
+		return err
 	}
+	return nil
 }
 
-func saveEdgesToDB(edge models.Edge) {
+func saveEdgesToDB(edge models.Edge, treeID string, tx pgx.Tx) error {
 	insertQuery := `
-	INSERT INTO edges (id, source, source_handle, target, target_handle)
-	VALUES ($1, $2, $3, $4, $5)
+	INSERT INTO edges (id, belongs_to, source, source_handle, target, target_handle)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	`
-	_, err := DB.Exec(
+	_, err := tx.Exec(
 		context.Background(),
 		insertQuery,
 		edge.ID,
+		treeID,
 		edge.Source,
 		edge.SourceHandle,
 		edge.Target,
@@ -144,5 +172,28 @@ func saveEdgesToDB(edge models.Edge) {
 	)
 	if err != nil {
 		fmt.Printf("Failed to execute edge INSERT \n %+v\n", err)
+		return err
 	}
+	return nil
 }
+
+func runInTransaction(fn func(pgx.Tx) error) error {
+	tx, err := DB.BeginTx(context.Background(), pgx.TxOptions{})
+	if err!=nil{
+		return err
+	}
+
+	defer tx.Rollback(context.Background())
+
+	err = fn(tx)
+	if err != nil{
+		return err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
