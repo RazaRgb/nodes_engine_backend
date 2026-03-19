@@ -12,6 +12,7 @@ import (
 )
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
+	//validation 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid http method", http.StatusMethodNotAllowed)
 		return
@@ -46,11 +47,11 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	err = db.InsertUser(user)
 	if err != nil {
 		fmt.Printf("user insertion in DB failed %v", err)
-		http.Error(w, "unable to create user", http.StatusInternalServerError)
+		http.Error(w, "unable to register", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"message":"User successfully registered"}`))
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"message":"User successfully registered"}`))
 }
