@@ -22,7 +22,6 @@ func JsonRead(w http.ResponseWriter, req *http.Request, updatedData any) error {
 	err := json.NewDecoder(req.Body).Decode(updatedData)
 	if err != nil {
 		fmt.Printf("Error decoding json:\n %v \n", err)
-		http.Error(w, "error encoding json ", http.StatusBadRequest)
 		return err
 	}
 	return nil

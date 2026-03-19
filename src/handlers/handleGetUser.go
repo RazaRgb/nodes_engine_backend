@@ -5,6 +5,7 @@ import (
 	"backend/src/utils"
 	"encoding/json"
 	"net/http"
+
 )
 
 func HandleGetUser(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +14,13 @@ func HandleGetUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "user doesnt exist", http.StatusNotFound)
 		return
 	}
+
 	user, err := db.GetUser(email)
+	if err != nil {
+		http.Error(w,"unable to get user", http.StatusNotFound)
+		return
+	}
+
 	if err != nil {
 		http.Error(w, "user doesnt exist", http.StatusNotFound)
 		return

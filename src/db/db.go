@@ -135,8 +135,8 @@ func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 	}
 
 	if err != nil {
-		fmt.Printf("failed to create user %s", newUser.Username)
-		return fmt.Errorf("failed to create user %w", err)
+		fmt.Printf("failed to create user %s\n", newUser.Username)
+		return fmt.Errorf("failed to create user %w\n", err)
 	}
 
 	return nil
