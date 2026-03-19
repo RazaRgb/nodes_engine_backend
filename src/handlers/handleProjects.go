@@ -37,6 +37,7 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newProj := models.Project{}
+	newTree := models.Tree
 
 	err := utils.JsonRead(w, r, &newProj)
 	if err != nil {
@@ -75,3 +76,4 @@ func HandleDELETEProject(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+

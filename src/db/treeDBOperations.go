@@ -88,28 +88,27 @@ func getEdgesFromDB(treeID string) []models.Edge {
 
 // ------------------------------------------
 
-func ClearTreeContent(treeID string) error {
-	err := runInTransaction(func(tx pgx.Tx) error{
-		clearQuery := `DELETE FROM nodes WHERE belongs_to = $1`
-		_, err := tx.Exec(
-			context.Background(),
-			clearQuery,
-			treeID,
-		)
-		if err != nil {
-			fmt.Printf("unable to clear tree for updation: %+v\n", err)
-			return err
-		}
-		return nil
-	})
-	if err!=nil{
+func clearTreeContent(tx pgx.Tx, treeID string) error {
+	clearQuery := `DELETE FROM nodes WHERE belongs_to = $1`
+	_, err := tx.Exec(
+		context.Background(),
+		clearQuery,
+		treeID,
+	)
+	if err != nil {
+		fmt.Printf("unable to clear tree: %+v\n", err)
 		return err
 	}
 	return nil
 }
 
-func InsertTreeInDB(updatedTree models.Tree) error{
+func UpdateTreeInDB(updatedTree models.Tree) error {
 	err := runInTransaction(func(tx pgx.Tx) error {
+		err := clearTreeContent(tx,updatedTree.ID)
+		if err != nil{
+			fmt.Printf("unable to clear tree from db: %+v\n", err)
+			return err
+		}
 		edgeArray := updatedTree.Edges
 		nodeArray := updatedTree.Nodes
 
@@ -120,14 +119,14 @@ func InsertTreeInDB(updatedTree models.Tree) error{
 			}
 		}
 		for _, edge := range edgeArray {
-			err := saveEdgesToDB(edge, tx)
+			err := saveEdgesToDB(edge, updatedTree.ID, tx)
 			if err != nil {
 				return err
 			}
 		}
 		return nil
-		})
-	if err != nil{
+	})
+	if err != nil {
 		return err
 	}
 	return nil
@@ -156,6 +155,7 @@ func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 }
 
 func saveEdgesToDB(edge models.Edge, treeID string, tx pgx.Tx) error {
+
 	insertQuery := `
 	INSERT INTO edges (id, belongs_to, source, source_handle, target, target_handle)
 	VALUES ($1, $2, $3, $4, $5, $6)
@@ -179,14 +179,14 @@ func saveEdgesToDB(edge models.Edge, treeID string, tx pgx.Tx) error {
 
 func runInTransaction(fn func(pgx.Tx) error) error {
 	tx, err := DB.BeginTx(context.Background(), pgx.TxOptions{})
-	if err!=nil{
+	if err != nil {
 		return err
 	}
 
 	defer tx.Rollback(context.Background())
 
 	err = fn(tx)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
@@ -197,3 +197,43 @@ func runInTransaction(fn func(pgx.Tx) error) error {
 	return nil
 }
 
+func CreateNewTree(newTree models.Tree, projID string) error {
+	err := runInTransaction(func(tx pgx.Tx) error {
+		createQuery := `
+		INSERT INTO trees (id, project_id)
+		VALUES ($1, $2)
+		`
+		_, err := tx.Exec(
+			context.Background(),
+			createQuery,
+			newTree.ID,
+			projID,
+		)
+		if err != nil {
+			fmt.Printf("unable to create a new tree: %+v\n", err)
+			return err
+		}
+
+		edgeArray := newTree.Edges
+		nodeArray := newTree.Nodes
+
+		for _, node := range nodeArray {
+			err := saveNodeToDB(node, newTree.ID, tx)
+			if err != nil {
+				return err
+			}
+		}
+		for _, edge := range edgeArray {
+			err := saveEdgesToDB(edge, newTree.ID, tx)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Printf("Unable to create new tree: %+v\n", err)
+		return err
+	}
+	return nil
+}
