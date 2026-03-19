@@ -6,7 +6,9 @@ import (
 	"backend/src/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
+	"github.com/jackc/pgx/v5"
 )
 
 func HandleGETProjects(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +39,7 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newProj := models.Project{}
-	newTree := models.Tree
+	newTree := models.Tree{}
 
 	err := utils.JsonRead(w, r, &newProj)
 	if err != nil {
@@ -46,10 +48,24 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newProj.Owner = email
+	newProj.ID = uuid.NewString()
+	newTree.ID = uuid.NewString()
 
-	newProj, err = db.InsertProject(newProj)
+	// Run transaction
+	err = db.RunInTransaction(func(tx pgx.Tx) error {
+		newProj, err = db.InsertProject(newProj, tx)
+		if err != nil {
+			return err
+		}
+		err = db.CreateNewTree(newTree, newProj.ID, tx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		http.Error(w, "unable to create project", http.StatusInternalServerError)
+		http.Error(w, "unable to create new project", http.StatusInternalServerError)
 		return
 	}
 
@@ -73,7 +89,5 @@ func HandleDELETEProject(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Errored while deleting project %+v \n", err)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 }
-
