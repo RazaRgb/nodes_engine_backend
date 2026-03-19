@@ -4,9 +4,12 @@ import (
 	"backend/src/models"
 	"context"
 	"fmt"
+
 	// "net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -83,7 +86,7 @@ func InitDB() {
 	fmt.Println("Database schema initialized successfully!")
 }
 
-func UserExists(email string) (bool, error) {
+func UserExists(email string, tx ...pgx.Tx) (bool, error) {
 	userQuery := `
 	SELECT EXISTS (
 		SELECT 1
@@ -91,7 +94,12 @@ func UserExists(email string) (bool, error) {
 		WHERE email = $1
 	)
 	`
-	row := DB.QueryRow(context.Background(), userQuery, email)
+	var row pgx.Row
+	if len(tx) == 0 {
+		row = DB.QueryRow(context.Background(), userQuery, email)
+	} else {
+		row = tx[0].QueryRow(context.Background(), userQuery, email)
+	}
 
 	var exists bool
 	err := row.Scan(&exists)
@@ -102,18 +110,30 @@ func UserExists(email string) (bool, error) {
 	return exists, nil
 }
 
-func InsertUser(newUser models.User) error {
+func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 	insertUserQuery := `
 	INSERT INTO users (email, username, hashedpass)
 	VALUES ($1,$2,$3)
 	`
-	_, err := DB.Exec(
-		context.Background(),
-		insertUserQuery,
-		newUser.Email,
-		newUser.Username,
-		newUser.HashedPassword,
-	)
+	var err error
+	if len(tx) ==0 {
+		_, err = DB.Exec(
+			context.Background(),
+			insertUserQuery,
+			newUser.Email,
+			newUser.Username,
+			newUser.HashedPassword,
+		)
+	} else {
+		_, err = tx[0].Exec(
+			context.Background(),
+			insertUserQuery,
+			newUser.Email,
+			newUser.Username,
+			newUser.HashedPassword,
+		)
+	}
+
 	if err != nil {
 		fmt.Printf("failed to create user %s", newUser.Username)
 		return fmt.Errorf("failed to create user %w", err)
@@ -122,14 +142,20 @@ func InsertUser(newUser models.User) error {
 	return nil
 }
 
-func GetUser(email string) (models.User, error) {
+func GetUser(email string, tx ...pgx.Tx) (models.User, error) {
 	selectQuery := `
 	SELECT email, username, hashedpass, creation_date
 	FROM users
 	WHERE email = $1
 	`
 	var user models.User
-	row := DB.QueryRow(context.Background(), selectQuery, email)
+	var row pgx.Row
+
+	if len(tx) == 0 {
+		row = DB.QueryRow(context.Background(), selectQuery, email)
+	} else {
+		row = tx[0].QueryRow(context.Background(), selectQuery, email)
+	}
 	err := row.Scan(
 		&user.Email,
 		&user.Username,
@@ -143,7 +169,7 @@ func GetUser(email string) (models.User, error) {
 	return user, nil
 }
 
-func GetProjectsInfo(email string) ([]models.Project, error) {
+func GetProjectsInfo(email string, tx ...pgx.Tx) ([]models.Project, error) {
 
 	selectQuery := `
 	SELECT id, name, creation_date, last_modified
@@ -151,11 +177,13 @@ func GetProjectsInfo(email string) ([]models.Project, error) {
 	WHERE owner = $1
 	`
 
-	rows, err := DB.Query(
-		context.Background(),
-		selectQuery,
-		email,
-	)
+	var rows pgx.Rows
+	var err error
+	if len(tx) == 0 {
+		rows, err = DB.Query(context.Background(), selectQuery,email)
+	} else {
+		rows, err = tx[0].Query(context.Background(), selectQuery,email)
+	}
 	if err != nil {
 		fmt.Printf("error in getting projlist from db")
 		return nil, err
@@ -189,19 +217,32 @@ func GetProjectsInfo(email string) ([]models.Project, error) {
 	return projList, nil
 }
 
-func InsertProject(newProject models.Project) (models.Project, error) {
+func InsertProject(newProject models.Project, tx ...pgx.Tx) (models.Project, error) {
 	insertQuery := `
 	INSERT INTO projects (id, name, owner)
 	values ($1,$2,$3)
 	RETURNING creation_date, last_modified 
 	`
-	err := DB.QueryRow(
-		context.Background(),
-		insertQuery,
-		newProject.ID,
-		newProject.Name,
-		newProject.Owner,
-	).Scan(
+	var row pgx.Row
+	if len(tx) == 0 {
+		row = DB.QueryRow(
+			context.Background(),
+			insertQuery,
+			newProject.ID,
+			newProject.Name,
+			newProject.Owner,
+		)
+	} else {
+		row = tx[0].QueryRow(
+			context.Background(),
+			insertQuery,
+			newProject.ID,
+			newProject.Name,
+			newProject.Owner,
+		)
+	}
+
+	err := row.Scan(
 		&newProject.CreationDate,
 		&newProject.LastModified,
 	)
@@ -212,17 +253,28 @@ func InsertProject(newProject models.Project) (models.Project, error) {
 	return newProject, nil
 }
 
-func DeleteProject(projectID string, email string) error {
+func DeleteProject(projectID string, email string, tx ...pgx.Tx) error {
 	deleteQuery := `
 	DELETE FROM projects
 	WHERE id = $1 AND owner = $2
 	`
-	result, err := DB.Exec(
-		context.Background(),
-		deleteQuery,
-		projectID,
-		email,
-	)
+	var result pgconn.CommandTag
+	var err error
+	if len(tx) == 0 {
+		result, err = DB.Exec(
+			context.Background(),
+			deleteQuery,
+			projectID,
+			email,
+		)
+	} else {
+		result, err = tx[0].Exec(
+			context.Background(),
+			deleteQuery,
+			projectID,
+			email,
+		)
+	}
 	if err != nil {
 		fmt.Printf("unable to delete project %+v\n", err)
 		return err

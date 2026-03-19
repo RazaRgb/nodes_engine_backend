@@ -8,21 +8,21 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func GetTreeFromDB(treeID string) models.Tree {
+func GetTreeFromDB(treeID string, tx pgx.Tx) models.Tree {
 	var tree models.Tree
-	tree.Nodes = getNodesFromDB(treeID)
-	tree.Edges = getEdgesFromDB(treeID)
+	tree.Nodes = getNodesFromDB(treeID, tx)
+	tree.Edges = getEdgesFromDB(treeID, tx)
 	return tree
 }
 
-func getNodesFromDB(treeID string) []models.Node {
+func getNodesFromDB(treeID string, tx pgx.Tx) []models.Node {
 	var nodes []models.Node
 
 	selectQuery := `
 	SELECT id, type, pos_x, pos_y, label FROM nodes WHERE belongs_to = $1
 	`
 
-	rows, err := DB.Query(context.Background(), selectQuery, treeID)
+	rows, err := tx.Query(context.Background(), selectQuery, treeID)
 	if err != nil {
 		fmt.Printf("unable to query tree database for nodes: %+v\n", err)
 		fmt.Printf("query : %+v", selectQuery)
@@ -49,7 +49,7 @@ func getNodesFromDB(treeID string) []models.Node {
 	return nodes
 }
 
-func getEdgesFromDB(treeID string) []models.Edge {
+func getEdgesFromDB(treeID string, tx pgx.Tx) []models.Edge {
 	var edges []models.Edge
 
 	selectQuery := `
@@ -59,7 +59,7 @@ func getEdgesFromDB(treeID string) []models.Edge {
 	WHERE nodes.belongs_to = $1
 	`
 
-	rows, err := DB.Query(context.Background(), selectQuery, treeID)
+	rows, err := tx.Query(context.Background(), selectQuery, treeID)
 	if err != nil {
 		fmt.Printf("unable to query tree database for edges: %+v\n", err)
 		fmt.Printf("query : %+v", selectQuery)
@@ -102,32 +102,21 @@ func clearTreeContent(tx pgx.Tx, treeID string) error {
 	return nil
 }
 
-func UpdateTreeInDB(updatedTree models.Tree) error {
-	err := runInTransaction(func(tx pgx.Tx) error {
-		err := clearTreeContent(tx,updatedTree.ID)
-		if err != nil{
-			fmt.Printf("unable to clear tree from db: %+v\n", err)
+func InsertTreeContentInDB(updatedTree models.Tree, tx pgx.Tx) error {
+	edgeArray := updatedTree.Edges
+	nodeArray := updatedTree.Nodes
+
+	for _, node := range nodeArray {
+		err := saveNodeToDB(node, updatedTree.ID, tx)
+		if err != nil {
 			return err
 		}
-		edgeArray := updatedTree.Edges
-		nodeArray := updatedTree.Nodes
-
-		for _, node := range nodeArray {
-			err := saveNodeToDB(node, updatedTree.ID, tx)
-			if err != nil {
-				return err
-			}
+	}
+	for _, edge := range edgeArray {
+		err := saveEdgesToDB(edge, updatedTree.ID, tx)
+		if err != nil {
+			return err
 		}
-		for _, edge := range edgeArray {
-			err := saveEdgesToDB(edge, updatedTree.ID, tx)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
 	return nil
 }
@@ -155,7 +144,6 @@ func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 }
 
 func saveEdgesToDB(edge models.Edge, treeID string, tx pgx.Tx) error {
-
 	insertQuery := `
 	INSERT INTO edges (id, belongs_to, source, source_handle, target, target_handle)
 	VALUES ($1, $2, $3, $4, $5, $6)
@@ -177,63 +165,37 @@ func saveEdgesToDB(edge models.Edge, treeID string, tx pgx.Tx) error {
 	return nil
 }
 
-func runInTransaction(fn func(pgx.Tx) error) error {
-	tx, err := DB.BeginTx(context.Background(), pgx.TxOptions{})
+
+func CreateNewTree(newTree models.Tree, projID string, tx pgx.Tx) error {
+	createQuery := `
+	INSERT INTO trees (id, project_id)
+	VALUES ($1, $2)
+	`
+	_, err := tx.Exec(
+		context.Background(),
+		createQuery,
+		newTree.ID,
+		projID,
+	)
 	if err != nil {
+		fmt.Printf("unable to create a new tree: %+v\n", err)
 		return err
 	}
 
-	defer tx.Rollback(context.Background())
+	edgeArray := newTree.Edges
+	nodeArray := newTree.Nodes
 
-	err = fn(tx)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit(context.Background())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func CreateNewTree(newTree models.Tree, projID string) error {
-	err := runInTransaction(func(tx pgx.Tx) error {
-		createQuery := `
-		INSERT INTO trees (id, project_id)
-		VALUES ($1, $2)
-		`
-		_, err := tx.Exec(
-			context.Background(),
-			createQuery,
-			newTree.ID,
-			projID,
-		)
+	for _, node := range nodeArray {
+		err := saveNodeToDB(node, newTree.ID, tx)
 		if err != nil {
-			fmt.Printf("unable to create a new tree: %+v\n", err)
 			return err
 		}
-
-		edgeArray := newTree.Edges
-		nodeArray := newTree.Nodes
-
-		for _, node := range nodeArray {
-			err := saveNodeToDB(node, newTree.ID, tx)
-			if err != nil {
-				return err
-			}
+	}
+	for _, edge := range edgeArray {
+		err := saveEdgesToDB(edge, newTree.ID, tx)
+		if err != nil {
+			return err
 		}
-		for _, edge := range edgeArray {
-			err := saveEdgesToDB(edge, newTree.ID, tx)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		fmt.Printf("Unable to create new tree: %+v\n", err)
-		return err
 	}
 	return nil
 }
