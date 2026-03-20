@@ -36,7 +36,7 @@ func InitDB() {
 
 	// TODO: add other tables
 	query := `
-	CREATE TABLE IF NOT EXISTS users (
+	CREATE TABLE IF NOT EXISTS users ji(
 		email VARCHAR(255) PRIMARY KEY,
 		username VARCHAR(100) NOT NULL,
 		hashedpass TEXT NOT NULL,
@@ -62,7 +62,7 @@ func InitDB() {
 		type VARCHAR(255) NOT NULL,
 		pos_x REAL NOT NULL,
 		pos_y REAL NOT NULL,
-		label TEXT,
+		label TEXT NOT NULL,
 		data TEXT
 	);
 
@@ -116,7 +116,7 @@ func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 	VALUES ($1,$2,$3)
 	`
 	var err error
-	if len(tx) ==0 {
+	if len(tx) == 0 {
 		_, err = DB.Exec(
 			context.Background(),
 			insertUserQuery,
@@ -138,7 +138,6 @@ func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 		fmt.Printf("failed to create user %s\n", newUser.Username)
 		return fmt.Errorf("failed to create user %w\n", err)
 	}
-
 	return nil
 }
 
@@ -170,7 +169,6 @@ func GetUser(email string, tx ...pgx.Tx) (models.User, error) {
 }
 
 func GetProjectsInfo(email string, tx ...pgx.Tx) ([]models.Project, error) {
-
 	selectQuery := `
 	SELECT id, name, creation_date, last_modified
 	FROM projects
@@ -180,9 +178,9 @@ func GetProjectsInfo(email string, tx ...pgx.Tx) ([]models.Project, error) {
 	var rows pgx.Rows
 	var err error
 	if len(tx) == 0 {
-		rows, err = DB.Query(context.Background(), selectQuery,email)
+		rows, err = DB.Query(context.Background(), selectQuery, email)
 	} else {
-		rows, err = tx[0].Query(context.Background(), selectQuery,email)
+		rows, err = tx[0].Query(context.Background(), selectQuery, email)
 	}
 	if err != nil {
 		fmt.Printf("error in getting projlist from db")
@@ -213,7 +211,6 @@ func GetProjectsInfo(email string, tx ...pgx.Tx) ([]models.Project, error) {
 		fmt.Printf("error while row scan loop %+v\n", err)
 		return nil, err
 	}
-
 	return projList, nil
 }
 
@@ -286,4 +283,39 @@ func DeleteProject(projectID string, email string, tx ...pgx.Tx) error {
 	}
 
 	return nil
+}
+
+func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
+	selectQuery := `
+	SELECT id FROM trees
+	WHERE project_id = $1
+	`
+	var treeIDs []string
+	var rows pgx.Rows
+	var err error
+
+	if len(tx) == 0 {
+		rows, err = DB.Query(context.Background(), selectQuery, projID)
+	} else {
+		rows, err = tx[0].Query(context.Background(), selectQuery, projID)
+	}
+	if err != nil {
+		return treeIDs, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+
+		var treeID string
+		err := rows.Scan(
+			&treeID,
+		)
+		if err != nil {
+			fmt.Printf("error scanning treeIDs: %+v\n", err)
+			return nil, err
+		}
+		treeIDs = append(treeIDs, treeID)
+	}
+
+	return treeIDs, nil
 }

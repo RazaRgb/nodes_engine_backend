@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"net/http"
 	"github.com/jackc/pgx/v5"
+	"net/http"
 )
 
 func HandleGETProjects(w http.ResponseWriter, r *http.Request) {
@@ -90,4 +90,52 @@ func HandleDELETEProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func HandleGETProjectData(w http.ResponseWriter, r *http.Request) {
+	projID := r.PathValue("id")
+
+	treeListany, err := db.RunInTransactionWithReturn(func(tx pgx.Tx) (any, error) {
+		var treeList []models.Tree
+		treeIDs, err := db.GetTreeIDsForProject(projID, tx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, treeID := range treeIDs {
+			tree, err := db.GetTreeFromDB(treeID, tx)
+			if err != nil {
+				return tree, err
+			}
+			treeList = append(treeList, tree)
+		}
+		if len(treeList) == 0 {
+			return treeList, fmt.Errorf("no trees found for the projectID")
+		}
+		return treeList, nil
+	})
+	if err != nil {
+		fmt.Printf("error occured while running transaction \n %+v\n", err)
+		http.Error(w, "unable to get project data", http.StatusInternalServerError)
+		return
+	}
+
+	treeList, ok := treeListany.([]models.Tree)
+	if !ok {
+		fmt.Println("Tree list isnt a list of trees?")
+		fmt.Printf("treelist : \n %+v\n", treeList)
+		http.Error(w, "unable to get project data ", http.StatusInternalServerError)
+		return
+	}
+
+	responseStruct := struct {
+		ProjID string        `json:"project_id"`
+		Trees  []models.Tree `json:"tree_list"`
+	}{
+		ProjID: projID,
+		Trees:  treeList,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	utils.JsonWrite(w, responseStruct, http.StatusOK)
 }

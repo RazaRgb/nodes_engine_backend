@@ -12,7 +12,7 @@ import (
 )
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
-	//validation 
+	//validation
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid http method", http.StatusMethodNotAllowed)
 		return

@@ -8,14 +8,22 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func GetTreeFromDB(treeID string, tx pgx.Tx) models.Tree {
+func GetTreeFromDB(treeID string, tx pgx.Tx) (models.Tree, error) {
 	var tree models.Tree
-	tree.Nodes = getNodesFromDB(treeID, tx)
-	tree.Edges = getEdgesFromDB(treeID, tx)
-	return tree
+	var err error
+	tree.Nodes, err = getNodesFromDB(treeID, tx)
+	if err != nil {
+		return tree, err
+	}
+	tree.Edges, err = getEdgesFromDB(treeID, tx)
+	if err != nil {
+		return tree, err
+	}
+
+	return tree, nil
 }
 
-func getNodesFromDB(treeID string, tx pgx.Tx) []models.Node {
+func getNodesFromDB(treeID string, tx pgx.Tx) ([]models.Node, error) {
 	var nodes []models.Node
 
 	selectQuery := `
@@ -25,7 +33,7 @@ func getNodesFromDB(treeID string, tx pgx.Tx) []models.Node {
 	rows, err := tx.Query(context.Background(), selectQuery, treeID)
 	if err != nil {
 		fmt.Printf("unable to query tree database for nodes: %+v\n", err)
-		fmt.Printf("query : %+v", selectQuery)
+		return nodes, err
 	}
 
 	defer rows.Close()
@@ -42,14 +50,15 @@ func getNodesFromDB(treeID string, tx pgx.Tx) []models.Node {
 		)
 		if err != nil {
 			fmt.Printf("error scanning nodes in get nodes query: %+v\n", err)
+			return nodes, err
 		}
 
 		nodes = append(nodes, node)
 	}
-	return nodes
+	return nodes, nil
 }
 
-func getEdgesFromDB(treeID string, tx pgx.Tx) []models.Edge {
+func getEdgesFromDB(treeID string, tx pgx.Tx) ([]models.Edge, error) {
 	var edges []models.Edge
 
 	selectQuery := `
@@ -62,7 +71,7 @@ func getEdgesFromDB(treeID string, tx pgx.Tx) []models.Edge {
 	rows, err := tx.Query(context.Background(), selectQuery, treeID)
 	if err != nil {
 		fmt.Printf("unable to query tree database for edges: %+v\n", err)
-		fmt.Printf("query : %+v", selectQuery)
+		return edges, err
 	}
 
 	defer rows.Close()
@@ -79,11 +88,12 @@ func getEdgesFromDB(treeID string, tx pgx.Tx) []models.Edge {
 		)
 		if err != nil {
 			fmt.Printf("error scanning edges in get edges query: %+v\n", err)
+			return edges, err
 		}
 
 		edges = append(edges, edge)
 	}
-	return edges
+	return edges, nil
 }
 
 // ------------------------------------------
@@ -164,7 +174,6 @@ func saveEdgesToDB(edge models.Edge, treeID string, tx pgx.Tx) error {
 	}
 	return nil
 }
-
 
 func CreateNewTree(newTree models.Tree, projID string, tx pgx.Tx) error {
 	createQuery := `
