@@ -40,6 +40,7 @@ func main() {
 
 	mux.Handle("GET /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjectData)))
 	mux.Handle("PUT /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandlePUTProjectData)))
+	mux.Handle("GET /api/projecttreeids/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjectTreeIDs)))
 
 	PORT := os.Getenv("PORT")
 	fmt.Printf("server listening at port %s \n", PORT)

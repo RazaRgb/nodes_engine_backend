@@ -49,8 +49,6 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 
 	newProj.Owner = email
 	newProj.ID = uuid.NewString()
-	// //change tree id when implementing multi-tree projects
-	// newTree.ID = newProj.ID
 	newTree.ID = uuid.NewString()
 
 	// Run transaction
@@ -74,12 +72,12 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(
-		struct{
-		Project models.Project `json:"project"`
-		TreeID string `json:"tree_id"`
-	}{
+		struct {
+			Project models.Project `json:"project"`
+			TreeID  string         `json:"tree_id"`
+		}{
 			Project: newProj,
-			TreeID: newTree.ID,
+			TreeID:  newTree.ID,
 		})
 }
 
@@ -208,4 +206,16 @@ func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+}
+
+func HandleGETProjectTreeIDs(w http.ResponseWriter, r *http.Request) {
+	projID := r.PathValue("id")
+	treeIDList, err := db.GetTreeIDsForProject(projID)
+	if err != nil {
+		http.Error(w, "unable to get tree IDs", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(treeIDList)
 }
