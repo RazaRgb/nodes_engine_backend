@@ -291,14 +291,11 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	var treeIDs []string
 	var rows pgx.Rows
 	var err error
-	fmt.Printf("projID queried :%+v \n", projID)
 
 	if len(tx) == 0 {
 		rows, err = DB.Query(context.Background(), selectQuery, projID)
-		fmt.Printf("running db\n")
 	} else {
 		rows, err = tx[0].Query(context.Background(), selectQuery, projID)
-		fmt.Printf("runnung tx\n")
 	}
 	if err != nil {
 		return treeIDs, err
@@ -306,7 +303,6 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		fmt.Println("temp")
 
 		var treeID string
 		err := rows.Scan(

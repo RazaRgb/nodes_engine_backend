@@ -22,7 +22,6 @@ func GetTreeFromDB(treeID string, tx pgx.Tx) (models.Tree, error) {
 
 	return tree, nil
 }
-
 func getNodesFromDB(treeID string, tx pgx.Tx) ([]models.Node, error) {
 	var nodes []models.Node
 

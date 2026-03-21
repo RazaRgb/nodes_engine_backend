@@ -49,6 +49,8 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 
 	newProj.Owner = email
 	newProj.ID = uuid.NewString()
+	// //change tree id when implementing multi-tree projects
+	// newTree.ID = newProj.ID
 	newTree.ID = uuid.NewString()
 
 	// Run transaction
@@ -71,7 +73,14 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(newProj)
+	json.NewEncoder(w).Encode(
+		struct{
+		Project models.Project `json:"project"`
+		TreeID string `json:"tree_id"`
+	}{
+			Project: newProj,
+			TreeID: newTree.ID,
+		})
 }
 
 func HandleDELETEProject(w http.ResponseWriter, r *http.Request) {
@@ -142,22 +151,9 @@ func HandleGETProjectData(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
-	projID := r.PathValue("project_id")
-
 	email, ok := utils.GetEmailFromContext(r.Context())
 	if !ok {
 		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
-		return
-	}
-
-	found, err := db.MatchProjectWithEmail(projID, email)
-	if err != nil {
-		http.Error(w, "an error occured", http.StatusInternalServerError)
-		return
-	}
-
-	if !found {
-		http.Error(w, "unauthorised transaction", http.StatusUnauthorized)
 		return
 	}
 
@@ -166,15 +162,27 @@ func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
 		Trees  []models.Tree `json:"tree_list"`
 	}{}
 
-	err = utils.JsonRead(r, &requestStruct)
+	err := utils.JsonRead(r, &requestStruct)
 	if err != nil {
 		http.Error(w, "unable to parse request", http.StatusBadRequest)
+		return
+	}
+	fmt.Printf("\nprinting req struct  %+v \n\n", requestStruct)
+
+	found, err := db.MatchProjectWithEmail(requestStruct.ProjID, email)
+	if err != nil {
+		http.Error(w, "an error occured", http.StatusInternalServerError)
+		return
+	}
+
+	if !found {
+		http.Error(w, "unauthorized transaction", http.StatusUnauthorized)
 		return
 	}
 
 	err = db.RunInTransaction(func(tx pgx.Tx) error {
 
-		treeIDList, err := db.GetTreeIDsForProject(projID, tx)
+		treeIDList, err := db.GetTreeIDsForProject(requestStruct.ProjID, tx)
 		if err != nil {
 			return err
 		}
