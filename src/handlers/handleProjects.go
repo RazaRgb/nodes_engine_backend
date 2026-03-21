@@ -41,7 +41,7 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 	newProj := models.Project{}
 	newTree := models.Tree{}
 
-	err := utils.JsonRead(w, r, &newProj)
+	err := utils.JsonRead(r, &newProj)
 	if err != nil {
 		http.Error(w, "unable to create project", http.StatusInternalServerError)
 		return
@@ -97,13 +97,14 @@ func HandleGETProjectData(w http.ResponseWriter, r *http.Request) {
 
 	treeListany, err := db.RunInTransactionWithReturn(func(tx pgx.Tx) (any, error) {
 		var treeList []models.Tree
-		treeIDs, err := db.GetTreeIDsForProject(projID, tx)
+		treeIDs, err := db.GetTreeIDsForProject(projID)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, treeID := range treeIDs {
 			tree, err := db.GetTreeFromDB(treeID, tx)
+			fmt.Printf("tree: \n %+v \n", tree)
 			if err != nil {
 				return tree, err
 			}
@@ -138,4 +139,65 @@ func HandleGETProjectData(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	utils.JsonWrite(w, responseStruct, http.StatusOK)
+}
+
+func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
+	projID := r.PathValue("project_id")
+
+	email, ok := utils.GetEmailFromContext(r.Context())
+	if !ok {
+		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
+		return
+	}
+
+	found, err := db.MatchProjectWithEmail(projID, email)
+	if err != nil {
+		http.Error(w, "an error occured", http.StatusInternalServerError)
+		return
+	}
+
+	if !found {
+		http.Error(w, "unauthorised transaction", http.StatusUnauthorized)
+		return
+	}
+
+	requestStruct := struct {
+		ProjID string        `json:"project_id"`
+		Trees  []models.Tree `json:"tree_list"`
+	}{}
+
+	err = utils.JsonRead(r, &requestStruct)
+	if err != nil {
+		http.Error(w, "unable to parse request", http.StatusBadRequest)
+		return
+	}
+
+	err = db.RunInTransaction(func(tx pgx.Tx) error {
+
+		treeIDList, err := db.GetTreeIDsForProject(projID, tx)
+		if err != nil {
+			return err
+		}
+
+		for _, treeID := range treeIDList {
+			err := db.ClearTreeContent(treeID, tx)
+			if err != nil {
+				return err
+			}
+		}
+		for _, tree := range requestStruct.Trees {
+			err := db.InsertTreeContentInDB(tree, tx)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		http.Error(w, "unable to save project", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 }

@@ -4,13 +4,11 @@ import (
 	"backend/src/models"
 	"context"
 	"fmt"
-
 	// "net/http"
-	"os"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"os"
 )
 
 var DB *pgxpool.Pool
@@ -36,7 +34,7 @@ func InitDB() {
 
 	// TODO: add other tables
 	query := `
-	CREATE TABLE IF NOT EXISTS users ji(
+	CREATE TABLE IF NOT EXISTS users (
 		email VARCHAR(255) PRIMARY KEY,
 		username VARCHAR(100) NOT NULL,
 		hashedpass TEXT NOT NULL,
@@ -293,11 +291,14 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	var treeIDs []string
 	var rows pgx.Rows
 	var err error
+	fmt.Printf("projID queried :%+v \n", projID)
 
 	if len(tx) == 0 {
 		rows, err = DB.Query(context.Background(), selectQuery, projID)
+		fmt.Printf("running db\n")
 	} else {
 		rows, err = tx[0].Query(context.Background(), selectQuery, projID)
+		fmt.Printf("runnung tx\n")
 	}
 	if err != nil {
 		return treeIDs, err
@@ -305,6 +306,7 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	defer rows.Close()
 
 	for rows.Next() {
+		fmt.Println("temp")
 
 		var treeID string
 		err := rows.Scan(
@@ -318,4 +320,26 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	}
 
 	return treeIDs, nil
+}
+
+func MatchProjectWithEmail(projID string, email string, tx ...pgx.Tx) (bool, error) {
+	selectQuery := `
+	SELECT EXISTS (
+		SELECT 1
+		FROM projects
+		WHERE id = $1 AND owner = $2
+	);
+	`
+	var found bool
+	var err error
+
+	if len(tx) == 0 {
+		err = DB.QueryRow(context.Background(), selectQuery, projID, email).Scan(&found)
+	} else {
+		err = tx[0].QueryRow(context.Background(), selectQuery, projID, email).Scan(&found)
+	}
+	if err != nil {
+		return false, err
+	}
+	return found, err
 }

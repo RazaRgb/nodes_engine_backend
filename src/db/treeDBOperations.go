@@ -98,7 +98,7 @@ func getEdgesFromDB(treeID string, tx pgx.Tx) ([]models.Edge, error) {
 
 // ------------------------------------------
 
-func clearTreeContent(tx pgx.Tx, treeID string) error {
+func ClearTreeContent(treeID string, tx pgx.Tx) error {
 	clearQuery := `DELETE FROM nodes WHERE belongs_to = $1`
 	_, err := tx.Exec(
 		context.Background(),

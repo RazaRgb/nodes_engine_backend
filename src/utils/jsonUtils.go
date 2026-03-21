@@ -17,7 +17,7 @@ func JsonWrite(w http.ResponseWriter, data any, status int) {
 	}
 }
 
-func JsonRead(w http.ResponseWriter, req *http.Request, updatedData any) error {
+func JsonRead(req *http.Request, updatedData any) error {
 
 	err := json.NewDecoder(req.Body).Decode(updatedData)
 	if err != nil {
