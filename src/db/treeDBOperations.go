@@ -27,7 +27,7 @@ func getNodesFromDB(treeID string, tx pgx.Tx) ([]models.Node, error) {
 	var nodes []models.Node
 
 	selectQuery := `
-	SELECT id, type, pos_x, pos_y, label FROM nodes WHERE belongs_to = $1
+	SELECT id, type, pos_x, pos_y, label, value FROM nodes WHERE belongs_to = $1
 	`
 
 	rows, err := tx.Query(context.Background(), selectQuery, treeID)
@@ -47,6 +47,7 @@ func getNodesFromDB(treeID string, tx pgx.Tx) ([]models.Node, error) {
 			&node.Pos.X,
 			&node.Pos.Y,
 			&node.Data.Label,
+			&node.Data.Value,
 		)
 		if err != nil {
 			fmt.Printf("error scanning nodes in get nodes query: %+v\n", err)
