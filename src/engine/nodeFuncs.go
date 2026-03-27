@@ -6,7 +6,7 @@ import "fmt"
 //
 // }
 
-func ResolveMathAdd(inpSock []E_Socket, outSock []E_Socket) ([]E_Socket, error) {
+func resolveMathAdd(inpSock []E_Socket, outSock []E_Socket) ([]E_Socket, error) {
 	if len(inpSock) != 2 || len(outSock) != 1 {
 		return outSock, fmt.Errorf("MathAdd requires exactly 2 inputs and 1 output")
 	}

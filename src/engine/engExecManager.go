@@ -4,52 +4,48 @@ import (
 	"backend/src/models"
 )
 
-var State E_State
 
-func ExecutionManager(tree models.Tree) (models.Tree, error) {
-	err := CreateState(tree)
-	if err != nil {
-		return tree, err
-	}
+func executionManager(state e_State) (models.Tree, error) {
 
-	return tree, nil
+	return models.Tree{}, nil
 }
 
-func CreateState(tree models.Tree) error {
-	State = E_State{
-		NodeMap: make(map[string]E_Node),
-		AdjList: make(map[E_SocketReference][]E_SocketReference),
-		FuncMap: map[string]func([]E_Socket, []E_Socket) ([]E_Socket, error){
-			"mathAdd": ResolveMathAdd,
+func createState(tree models.Tree) (e_State ,error) {
+	var state e_State
+	state = e_State{
+		NodeMap: make(map[string]e_Node),
+		AdjList: make(map[e_SocketReference][]e_SocketReference),
+		FuncMap: map[string]func([]e_Socket, []e_Socket) ([]e_Socket, error){
+			//"mathAdd": ResolveMathAdd,
 		},
 	}
 
 	for _, node := range tree.Nodes {
-		State.NodeMap[node.ID] = E_Node{
+		state.NodeMap[node.ID] = e_Node{
 			ID:         node.ID,
 			NodeType:   node.Type,
-			InpSockArr: make([]E_SocketReference, 0),
-			OutSockArr: make([]E_SocketReference, 0),
+			InpSockArr: make([]e_SocketReference, 0),
+			OutSockArr: make([]e_SocketReference, 0),
 		}
 	}
 
 	for _, edge := range tree.Edges {
 
-		sourceRef := E_SocketReference{
+		sourceRef := e_SocketReference{
 			NodeID:   edge.Source,
 			SocketID: edge.SourceHandle,
 		}
-		targetRef := E_SocketReference{
+		targetRef := e_SocketReference{
 			NodeID:   edge.Target,
 			SocketID: edge.TargetHandle,
 		}
 
-		State.AdjList[sourceRef] = append(State.AdjList[sourceRef], targetRef)
+		state.AdjList[sourceRef] = append(state.AdjList[sourceRef], targetRef)
 	}
 
-	State.FuncMap = map[string]func([]E_Socket, []E_Socket) ([]E_Socket, error){
-		"mathAdd": ResolveMathAdd,
+	state.FuncMap = map[string]func([]e_Socket, []e_Socket) ([]e_Socket, error){
+		//"mathAdd": ResolveMathAdd,
 	}
 
-	return nil
+	return state, nil
 }

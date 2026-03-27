@@ -130,8 +130,7 @@ func HandleGETProjectData(w http.ResponseWriter, r *http.Request) {
 
 	treeList, ok := treeListany.([]models.Tree)
 	if !ok {
-		fmt.Println("Tree list isnt a list of trees?")
-		fmt.Printf("treelist : \n %+v\n", treeList)
+		// fmt.Printf("treelist : \n %+v\n", treeList)
 		http.Error(w, "unable to get project data ", http.StatusInternalServerError)
 		return
 	}
@@ -165,7 +164,7 @@ func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unable to parse request", http.StatusBadRequest)
 		return
 	}
-	fmt.Printf("\nprinting req struct  %+v \n\n", requestStruct)
+	// fmt.Printf("\nprinting req struct  %+v \n\n", requestStruct)
 
 	found, err := db.MatchProjectWithEmail(requestStruct.ProjID, email)
 	if err != nil {
@@ -174,7 +173,7 @@ func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !found {
-		http.Error(w, "unauthorized transaction", http.StatusUnauthorized)
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 

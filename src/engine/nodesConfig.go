@@ -22,7 +22,7 @@ var nodeRegistry map[string]nodeConfig = map[string]nodeConfig{
 	},
 }
 
-func GetNodeConfig(nodeType string) (nodeConfig, error) {
+func getNodeConfig(nodeType string) (nodeConfig, error) {
 	nc, found := nodeRegistry[nodeType]
 	if !found {
 		return nodeConfig{}, fmt.Errorf("Node Config not found for %s", nodeType)
