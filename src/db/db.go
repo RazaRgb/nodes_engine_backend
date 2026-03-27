@@ -32,7 +32,6 @@ func InitDB() {
 	DB = pool
 	fmt.Println("Successfully connected to Postgres 🚀")
 
-	// TODO: add other tables
 	query := `
 	CREATE TABLE IF NOT EXISTS users (
 		email VARCHAR(255) PRIMARY KEY,
@@ -61,7 +60,7 @@ func InitDB() {
 		pos_x REAL NOT NULL,
 		pos_y REAL NOT NULL,
 		label TEXT NOT NULL,
-		data TEXT
+		value TEXT
 	);
 
 	CREATE TABLE IF NOT EXISTS edges (
@@ -303,7 +302,6 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-
 		var treeID string
 		err := rows.Scan(
 			&treeID,

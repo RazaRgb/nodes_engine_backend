@@ -5,12 +5,10 @@ import (
 )
 
 type User struct {
-	Email          string `json:"email"` // primary key
-	Username       string `json:"username"`
-	HashedPassword string `json:"hashedPassword"`
-	// AuthProvider   string `json:"authProvider"`
-	// AuthProviderID string `json:"authProviderID"`
-	CreationDate time.Time `json:"creationDate"`
+	Email          string    `json:"email"` // primary key
+	Username       string    `json:"username"`
+	HashedPassword string    `json:"hashedPassword"`
+	CreationDate   time.Time `json:"creationDate"`
 }
 
 type Project struct {
@@ -30,6 +28,7 @@ type Position struct {
 
 type Data struct {
 	Label string `json:"label"`
+	Value string `json:"value"`
 }
 
 // -----------------------------------------

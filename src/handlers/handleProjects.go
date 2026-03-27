@@ -111,7 +111,7 @@ func HandleGETProjectData(w http.ResponseWriter, r *http.Request) {
 
 		for _, treeID := range treeIDs {
 			tree, err := db.GetTreeFromDB(treeID, tx)
-			fmt.Printf("tree: \n %+v \n", tree)
+			// fmt.Printf("tree- \n %+v \n", tree)
 			if err != nil {
 				return tree, err
 			}

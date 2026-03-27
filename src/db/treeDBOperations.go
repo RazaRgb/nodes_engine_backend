@@ -10,6 +10,7 @@ import (
 
 func GetTreeFromDB(treeID string, tx pgx.Tx) (models.Tree, error) {
 	var tree models.Tree
+	tree.ID = treeID
 	var err error
 	tree.Nodes, err = getNodesFromDB(treeID, tx)
 	if err != nil {
@@ -132,8 +133,8 @@ func InsertTreeContentInDB(updatedTree models.Tree, tx pgx.Tx) error {
 
 func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 	insertNodeQuery := `
-	INSERT INTO nodes (belongs_to, id, type, pos_x, pos_y, label)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO nodes (belongs_to, id, type, pos_x, pos_y, label, value)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := tx.Exec(
 		context.Background(),
@@ -144,6 +145,7 @@ func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 		node.Pos.X,
 		node.Pos.Y,
 		node.Data.Label,
+		node.Data.Value,
 	)
 	if err != nil {
 		fmt.Printf("Failed to execute node INSERT \n %+v\n", err)
