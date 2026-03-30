@@ -178,7 +178,6 @@ func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = db.RunInTransaction(func(tx pgx.Tx) error {
-
 		treeIDList, err := db.GetTreeIDsForProject(requestStruct.ProjID, tx)
 		if err != nil {
 			return err

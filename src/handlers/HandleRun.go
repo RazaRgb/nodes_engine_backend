@@ -22,7 +22,6 @@ func HandleRun(w http.ResponseWriter, r *http.Request) {
 		Trees  []models.Tree `json:"tree_list"`
 	}{}
 
-
 	err := utils.JsonRead(r, &requestStruct)
 	if err != nil {
 		http.Error(w, "unable to parse request", http.StatusBadRequest)

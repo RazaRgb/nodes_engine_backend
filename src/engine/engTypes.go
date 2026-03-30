@@ -1,26 +1,26 @@
 package engine
 
-type E_Socket struct {
+type e_Socket struct {
 	ID    string
 	Data  any
 	Error error
 }
 
-type E_SocketReference struct {
+type e_SocketReference struct {
 	NodeID   string
 	SocketID string
 }
 
-type E_Node struct {
+type e_Node struct {
 	ID         string
-	InpSockArr []E_SocketReference
-	OutSockArr []E_SocketReference
+	InpSockArr []e_SocketReference
+	OutSockArr []e_SocketReference
 	NodeType   string
 }
 
-type E_State struct {
-	NodeMap map[string]E_Node
-	FuncMap map[string](func(inputSocks []E_Socket, outputSocks []E_Socket) ([]E_Socket, error))
+type e_State struct {
+	NodeMap map[string]e_Node
+	FuncMap map[string](func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error))
 
-	AdjList map[E_SocketReference]([]E_SocketReference) //directional mapping of socket connections
+	AdjList map[e_SocketReference]([]e_SocketReference) //directional mapping of socket connections
 }
