@@ -22,3 +22,15 @@ func resolveMathAdd(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) 
 	outSock[0].Data = inpSock[0].Data.(float64) + inpSock[1].Data.(float64)
 	return outSock, nil
 }
+
+func resolveInputNumber(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
+
+	if len(inpSock) != 0 || len(outSock) != 1 {
+		return outSock, fmt.Errorf("MathAdd requires exactly 2 inputs and 1 output")
+	}
+
+	//val,ok :=
+
+	outSock[0].Data = inpSock[0].Data.(float64) + inpSock[1].Data.(float64)
+	return outSock, nil
+}

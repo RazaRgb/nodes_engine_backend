@@ -3,29 +3,51 @@ package engine
 import "fmt"
 
 type nodeConfig struct {
-	InputCount  int
-	OutputCount int
+	inputCount  int
+	outputCount int
 }
 
-var nodeRegistry map[string]nodeConfig = map[string]nodeConfig{
-	"MathAdd": {
-		InputCount:  2,
-		OutputCount: 1,
+type resolver func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error)
+
+type nodeReg struct {
+	config    map[string]nodeConfig
+	resolvers map[string](resolver)
+}
+
+var nodeRegistry nodeReg = nodeReg{
+	config: map[string]nodeConfig{
+		"mathAdd": {
+			inputCount:  2,
+			outputCount: 1,
+		},
+		"outputLog": {
+			inputCount:  1,
+			outputCount: 0,
+		},
+		"inputNumber": {
+			inputCount:  0,
+			outputCount: 1,
+		},
 	},
-	"OutputLog": {
-		InputCount:  1,
-		OutputCount: 0,
-	},
-	"InputNumber": {
-		InputCount:  0,
-		OutputCount: 1,
+	resolvers: map[string]resolver{
+		"mathAdd":     resolveMathAdd,
+		"inputNumber": resolveInputNumber,
+		"outputLog":   resolveMathAdd,
 	},
 }
 
 func getNodeConfig(nodeType string) (nodeConfig, error) {
-	nc, found := nodeRegistry[nodeType]
+	nc, found := nodeRegistry.config[nodeType]
 	if !found {
 		return nodeConfig{}, fmt.Errorf("Node Config not found for %s", nodeType)
 	}
 	return nc, nil
+}
+
+func getNodeResolver(nodeType string) (resolver, error) {
+	res, found := nodeRegistry.resolvers[nodeType]
+	if !found {
+		return nil, fmt.Errorf("Node resolver not found for %s", nodeType)
+	}
+	return res, nil
 }

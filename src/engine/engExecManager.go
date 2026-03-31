@@ -2,6 +2,9 @@ package engine
 
 import (
 	"backend/src/models"
+	"encoding/json"
+	"fmt"
+	"os"
 )
 
 func executionManager(state e_State) (models.Tree, error) {
@@ -13,25 +16,27 @@ func createState(tree models.Tree) (e_State, error) {
 	var state e_State
 	state = e_State{
 		NodeMap: make(map[string]e_Node),
+		DegMap:  make(map[string]int),
 		AdjList: make(map[e_SocketReference][]e_SocketReference),
-		FuncMap: map[string]func([]e_Socket, []e_Socket) ([]e_Socket, error){
-			"mathAdd":     resolveMathAdd,
-			"inputNumber": resolveMathAdd,
-			"outputLog":   resolveMathAdd,
-		},
 	}
 
 	for _, node := range tree.Nodes {
+		nc, err := getNodeConfig(node.Type)
+		if err != nil {
+			return e_State{}, err
+		}
+
+		state.DegMap[node.ID] = nc.inputCount
+
 		state.NodeMap[node.ID] = e_Node{
 			ID:         node.ID,
 			NodeType:   node.Type,
-			InpSockArr: make([]e_SocketReference, 0),
-			OutSockArr: make([]e_SocketReference, 0),
+			InpSockArr: make([]e_SocketReference, nc.inputCount),
+			OutSockArr: make([]e_SocketReference, nc.outputCount),
 		}
 	}
 
 	for _, edge := range tree.Edges {
-
 		sourceRef := e_SocketReference{
 			NodeID:   edge.Source,
 			SocketID: edge.SourceHandle,
@@ -43,9 +48,10 @@ func createState(tree models.Tree) (e_State, error) {
 
 		state.AdjList[sourceRef] = append(state.AdjList[sourceRef], targetRef)
 	}
-
-	state.FuncMap = map[string]func([]e_Socket, []e_Socket) ([]e_Socket, error){
-		//"mathAdd": ResolveMathAdd,
+	fmt.Print("state: \n")
+	err := json.NewEncoder(os.Stdout).Encode(state)
+	if err != nil {
+		fmt.Printf("Error encoding json:\n %v", err)
 	}
 
 	return state, nil
