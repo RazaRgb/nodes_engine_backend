@@ -28,7 +28,7 @@ type Position struct {
 
 type Data struct {
 	Label string `json:"label"`
-	Value any `json:"value"`
+	Value string `json:"value"` //stored in db as json
 }
 
 // -----------------------------------------

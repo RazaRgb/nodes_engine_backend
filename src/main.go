@@ -32,11 +32,12 @@ func main() {
 	mux.Handle("/api/logout", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleLogout)))
 	// mux.Handle("/api/graph", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGraph)))
 	mux.Handle("/api/getuser", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGetUser)))
-	mux.Handle("/api/run", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleRun)))
+	// mux.Handle("/api/run", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleRun)))
 
 	mux.Handle("GET /api/projects", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjects)))
 	mux.Handle("POST /api/projects", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandlePOSTProject)))
 	mux.Handle("DELETE /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleDELETEProject)))
+	mux.Handle("POST /api/projects/{id}/run", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleRun)))
 
 	mux.Handle("GET /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjectData)))
 	mux.Handle("PUT /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandlePUTProjectData)))
