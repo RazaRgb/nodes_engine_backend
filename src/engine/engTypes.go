@@ -21,7 +21,8 @@ type e_Node struct {
 }
 
 type e_State struct {
-	NodeMap map[string]e_Node                           `json:"nodeMap"`
+	NodeMap map[string]*e_Node `json:"nodeMap"`
+	SockMap map[e_SocketReference]*e_Socket
 	DegMap  map[string]int                              `json:"degMap"`
 	AdjList map[e_SocketReference]([]e_SocketReference) `json:"AdjList"` //directional mapping of socket connections
 }

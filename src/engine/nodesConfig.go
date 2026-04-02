@@ -10,8 +10,9 @@ type nodeConfig struct {
 type resolver func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error)
 
 type nodeReg struct {
-	config    map[string]nodeConfig
-	resolvers map[string](resolver)
+	config          map[string]nodeConfig
+	resolvers       map[string](resolver)
+	populateSockets map[string]func(*e_State, *e_Node, string) error
 }
 
 var nodeRegistry nodeReg = nodeReg{
@@ -33,6 +34,9 @@ var nodeRegistry nodeReg = nodeReg{
 		"mathAdd":     resolveMathAdd,
 		"inputNumber": resolveInputNumber,
 		"outputLog":   resolveMathAdd,
+	},
+	populateSockets: map[string]func(*e_State, *e_Node, string) error{
+		"inputNumber": popInputNumber,
 	},
 }
 
