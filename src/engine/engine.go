@@ -5,19 +5,31 @@ import (
 	//"fmt"
 )
 
-func ExecuteTree(tree models.Tree) (models.Tree, error) {
+func ExecuteTree(tree models.Tree) (struct {
+	Sockmap map[string]e_Socket `json:"SockMap"`
+}, error) {
 
 	//fmt.Printf("tree to exec : \n %+v \n", tree)
 
 	State, err := createState(tree)
 	if err != nil {
-		return tree, err
+		return struct {
+			Sockmap map[string]e_Socket `json:"SockMap"`
+		}{}, err
 	}
 
-	resultTree, err := executionManager(State)
+	resultSockMap, err := executionManager(&State)
 	if err != nil {
-		return tree, err
+		return struct {
+			Sockmap map[string]e_Socket `json:"SockMap"`
+		}{}, err
 	}
 
-	return resultTree, nil
+	result := struct {
+		Sockmap map[string]e_Socket `json:"SockMap"`
+	}{
+		Sockmap: resultSockMap,
+	}
+
+	return result, nil
 }

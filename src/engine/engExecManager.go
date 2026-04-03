@@ -1,106 +1,115 @@
 package engine
 
-import (
-	"backend/src/models"
-	"encoding/json"
-	"fmt"
-	"os"
-	"strconv"
-)
+//TODO: implement logging with different log levels
 
-func executionManager(state e_State) (models.Tree, error) {
+//const LOGLEVEL int = 2
 
-	return models.Tree{}, nil
-}
-
-func createState(tree models.Tree) (e_State, error) {
-
-	var state e_State
-	state = e_State{
-		NodeMap: make(map[string]*e_Node),
-		DegMap:  make(map[string]int),
-		AdjList: make(map[e_SocketReference][]e_SocketReference),
-		SockMap: make(map[e_SocketReference]*e_Socket, 100),
+func executionManager(state *e_State) (map[string]e_Socket, error) {
+	engComm := e_Communication{
+		interrupt:      make(chan error, 3),
+		valuePropagate: make(chan e_workerValue, 5),
 	}
 
-	defer func() {
-		printEngineState(&state)
-		fmt.Printf("sockRefMap dump : \n %+v \n", state.SockMap)
-	}()
+	outPutSockMap := make(map[string]e_Socket)
 
-	for _, node := range tree.Nodes {
-		nc, err := getNodeConfig(node.Type)
-		if err != nil {
-			return e_State{}, err
-		}
-
-		state.NodeMap[node.ID] = &e_Node{
-			ID:         node.ID,
-			NodeType:   node.Type,
-			InpSockArr: make([]e_SocketReference, nc.inputCount),
-			OutSockArr: make([]e_SocketReference, nc.outputCount),
-		}
-
-		// Create sockets
-		for i := range nc.outputCount {
-			sockID := "o" + strconv.Itoa(i+1)
-			state.NodeMap[node.ID].OutSockArr[i].SocketID = (sockID)
-			state.NodeMap[node.ID].OutSockArr[i].NodeID = node.ID
-			state.SockMap[e_SocketReference{
-				NodeID:   node.ID,
-				SocketID: sockID,
-			}] = &e_Socket{
-				ID: sockID,
-			}
-		}
-		for i := range nc.inputCount {
-			sockID := "i" + strconv.Itoa(i+1)
-			state.NodeMap[node.ID].InpSockArr[i].SocketID = (sockID)
-			state.NodeMap[node.ID].InpSockArr[i].NodeID = node.ID
-			state.SockMap[e_SocketReference{
-				NodeID:   node.ID,
-				SocketID: sockID,
-			}] = &e_Socket{
-				ID: sockID,
-			}
-		}
-		state.DegMap[node.ID] = 0
-
-	}
-
-	for _, edge := range tree.Edges {
-		sourceRef := e_SocketReference{
-			NodeID:   edge.Source,
-			SocketID: edge.SourceHandle,
-		}
-		targetRef := e_SocketReference{
-			NodeID:   edge.Target,
-			SocketID: edge.TargetHandle,
-		}
-		state.DegMap[edge.Target]++
-
-		state.AdjList[sourceRef] = append(state.AdjList[sourceRef], targetRef)
-	}
-
-	for _, node := range tree.Nodes {
-		if node.Type == "inputNumber" {
-			fmt.Printf("state :\n %+v \n", state)
-			err := popInputNumber(&state, state.NodeMap[node.ID], node.Data.Value)
+	for nodeID, _ := range state.NodeMap {
+		if state.DegMap[nodeID] == 0 {
+			err := spawnWorker(state, &engComm, nodeID)
 			if err != nil {
-				fmt.Printf("error while inserting values in inputNodeSocket")
-				return e_State{}, err
+				return nil, err
 			}
 		}
 	}
 
-	return state, nil
+	defer close(engComm.interrupt)
+	defer close(engComm.valuePropagate)
+
+	for {
+		select {
+		case err := <-engComm.interrupt:
+			if err != nil {
+				return nil, err
+			} else {
+				return outPutSockMap, nil
+			}
+
+		case sockStruct := <-engComm.valuePropagate:
+			for _, sock := range sockStruct.socket {
+				tgtRef := state.AdjList[e_SocketReference{
+					NodeID:   sockStruct.nodeID,
+					SocketID: sock.ID,
+				}]
+
+				for _, tgtSockRef := range tgtRef {
+					state.SockMap[tgtSockRef] = &sock
+					state.DegMap[tgtSockRef.NodeID]--
+					if state.DegMap[tgtSockRef.NodeID] == 0 {
+						err := spawnWorker(state, &engComm, tgtSockRef.NodeID)
+						if err != nil {
+							return nil, err
+						}
+					}
+				}
+
+				outPutSockMap[(sockStruct.nodeID + ":" + sock.ID)] = sock
+			}
+
+			//update coutner
+			state.nodeCounter--
+			if state.nodeCounter == 0 {
+				return outPutSockMap, nil
+			}
+		}
+	}
 }
 
-func printEngineState(state *e_State) {
-	fmt.Print("----Engine state---- \n")
-	err := json.NewEncoder(os.Stdout).Encode(*state)
-	fmt.Println()
+func spawnWorker(
+	state *e_State,
+	engComm *e_Communication,
+	nodeID string,
+) error {
+
+	nodePtr := state.NodeMap[nodeID]
+	resolver, err := getNodeResolver(nodePtr.NodeType)
 	if err != nil {
-		fmt.Printf("Error encoding json:\n %v", err)
+		return err
+	}
+	outSockArr := make([]e_Socket, 0)
+	for _, sockRef := range state.NodeMap[nodeID].OutSockArr {
+		outSockArr = append(outSockArr, *state.SockMap[sockRef])
+	}
+	inpSockArr := make([]e_Socket, 0)
+	for _, sockRef := range state.NodeMap[nodeID].InpSockArr {
+		inpSockArr = append(inpSockArr, *state.SockMap[sockRef])
+	}
+	go worker(inpSockArr, outSockArr, resolver, engComm, nodeID)
+	return nil
+}
+
+func worker(
+	inpSockrefArr []e_Socket,
+	outSockrefArr []e_Socket,
+	resolver nodeResolver,
+	engComm *e_Communication,
+	nodeID string,
+) {
+
+	//{ // LOgging
+	//	if LOGLEVEL >= 2 {
+	//		fmt.Printf("LOG2: working on %s\n", nodeID)
+	//	}
+	//}
+
+	outputSock, err := resolver(inpSockrefArr, outSockrefArr)
+	if err != nil {
+		engComm.interrupt <- err
+		return
+	}
+	engComm.valuePropagate <- struct {
+		socket []e_Socket
+		nodeID string
+	}{
+		socket: outputSock,
+		nodeID: nodeID,
 	}
 }

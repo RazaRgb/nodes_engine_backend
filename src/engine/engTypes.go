@@ -21,13 +21,24 @@ type e_Node struct {
 }
 
 type e_State struct {
-	NodeMap map[string]*e_Node `json:"nodeMap"`
-	SockMap map[e_SocketReference]*e_Socket
-	DegMap  map[string]int                              `json:"degMap"`
-	AdjList map[e_SocketReference]([]e_SocketReference) `json:"AdjList"` //directional mapping of socket connections
+	NodeMap     map[string]*e_Node `json:"nodeMap"`
+	SockMap     map[e_SocketReference]*e_Socket
+	DegMap      map[string]int                              `json:"degMap"`
+	AdjList     map[e_SocketReference]([]e_SocketReference) `json:"AdjList"` //directional mapping of socket connections
+	nodeCounter int
+}
+
+type e_Communication struct {
+	interrupt      chan error
+	valuePropagate chan e_workerValue
+}
+
+type e_workerValue struct {
+	socket []e_Socket
+	nodeID string
 }
 
 func (e e_SocketReference) MarshalText() ([]byte, error) {
-	res := e.NodeID + e.SocketID
+	res := e.NodeID + ":" + e.SocketID
 	return []byte(res), nil
 }

@@ -7,17 +7,22 @@ type nodeConfig struct {
 	outputCount int
 }
 
-type resolver func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error)
+type nodeResolver func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error)
+type sockPopulate func(*e_State, *e_Node, string) error
 
 type nodeReg struct {
 	config          map[string]nodeConfig
-	resolvers       map[string](resolver)
-	populateSockets map[string]func(*e_State, *e_Node, string) error
+	resolvers       map[string](nodeResolver)
+	populateSockets map[string](sockPopulate)
 }
 
 var nodeRegistry nodeReg = nodeReg{
 	config: map[string]nodeConfig{
 		"mathAdd": {
+			inputCount:  2,
+			outputCount: 1,
+		},
+		"mathMultiply": {
 			inputCount:  2,
 			outputCount: 1,
 		},
@@ -30,12 +35,13 @@ var nodeRegistry nodeReg = nodeReg{
 			outputCount: 1,
 		},
 	},
-	resolvers: map[string]resolver{
+	resolvers: map[string]nodeResolver{
 		"mathAdd":     resolveMathAdd,
 		"inputNumber": resolveInputNumber,
-		"outputLog":   resolveMathAdd,
+		"outputLog":   resolveOutputLog,
+		"mathMultiply": resolveMathMultiply,
 	},
-	populateSockets: map[string]func(*e_State, *e_Node, string) error{
+	populateSockets: map[string]sockPopulate{
 		"inputNumber": popInputNumber,
 	},
 }
@@ -48,10 +54,18 @@ func getNodeConfig(nodeType string) (nodeConfig, error) {
 	return nc, nil
 }
 
-func getNodeResolver(nodeType string) (resolver, error) {
+func getNodeResolver(nodeType string) (nodeResolver, error) {
 	res, found := nodeRegistry.resolvers[nodeType]
 	if !found {
 		return nil, fmt.Errorf("Node resolver not found for %s", nodeType)
 	}
 	return res, nil
+}
+
+func getNodePopulateFunc(nodeType string) (sockPopulate, bool) {
+	f, found := nodeRegistry.populateSockets[nodeType]
+	if !found {
+		return nil, false
+	}
+	return f, true
 }
