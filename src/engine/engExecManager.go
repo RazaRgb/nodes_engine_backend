@@ -6,7 +6,10 @@ package engine
 
 func executionManager(state *e_State) (map[string]e_Socket, error) {
 	engComm := e_Communication{
-		interrupt:      make(chan error, 3),
+		interrupt: make(chan struct {
+			sockStruct e_workerValue
+			Error      error
+		}, 3),
 		valuePropagate: make(chan e_workerValue, 5),
 	}
 
@@ -21,17 +24,18 @@ func executionManager(state *e_State) (map[string]e_Socket, error) {
 		}
 	}
 
-	defer close(engComm.interrupt)
-	defer close(engComm.valuePropagate)
+	// defer close(engComm.interrupt)
+	// defer close(engComm.valuePropagate)
 
 	for {
 		select {
-		case err := <-engComm.interrupt:
-			if err != nil {
-				return nil, err
-			} else {
-				return outPutSockMap, nil
+		case interruption := <-engComm.interrupt:
+
+			sockStruct := interruption.sockStruct
+			for _, sock := range sockStruct.socket {
+				outPutSockMap[(sockStruct.nodeID + ":" + sock.ID)] = sock
 			}
+			return outPutSockMap, nil
 
 		case sockStruct := <-engComm.valuePropagate:
 			for _, sock := range sockStruct.socket {
@@ -102,7 +106,16 @@ func worker(
 
 	outputSock, err := resolver(inpSockrefArr, outSockrefArr)
 	if err != nil {
-		engComm.interrupt <- err
+		engComm.interrupt <- struct {
+			sockStruct e_workerValue
+			Error      error
+		}{
+			sockStruct: e_workerValue{
+				socket: outputSock,
+				nodeID: nodeID,
+			},
+			Error: err,
+		}
 		return
 	}
 	engComm.valuePropagate <- struct {

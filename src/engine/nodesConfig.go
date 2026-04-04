@@ -18,6 +18,7 @@ type nodeReg struct {
 
 var nodeRegistry nodeReg = nodeReg{
 	config: map[string]nodeConfig{
+
 		"mathAdd": {
 			inputCount:  2,
 			outputCount: 1,
@@ -26,23 +27,43 @@ var nodeRegistry nodeReg = nodeReg{
 			inputCount:  2,
 			outputCount: 1,
 		},
+
 		"outputLog": {
 			inputCount:  1,
 			outputCount: 0,
 		},
+
 		"inputNumber": {
 			inputCount:  0,
 			outputCount: 1,
 		},
+		"inputString": {
+			inputCount:  0,
+			outputCount: 1,
+		},
+
+		"stringConcat": {
+			inputCount:  2,
+			outputCount: 1,
+		},
+
+		"aiLLM": {
+			inputCount:  3,
+			outputCount: 1,
+		},
 	},
 	resolvers: map[string]nodeResolver{
-		"mathAdd":     resolveMathAdd,
-		"inputNumber": resolveInputNumber,
-		"outputLog":   resolveOutputLog,
+		"mathAdd":      resolveMathAdd,
+		"inputNumber":  resolveInputNumber,
+		"outputLog":    resolveOutputLog,
 		"mathMultiply": resolveMathMultiply,
+		"inputString":  resolveInputString,
+		"stringConcat": resolveStringConcat,
+		"aiLLM":        resolveAiLLM,
 	},
 	populateSockets: map[string]sockPopulate{
 		"inputNumber": popInputNumber,
+		"inputString": popInputString,
 	},
 }
 

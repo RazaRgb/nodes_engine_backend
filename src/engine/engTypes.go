@@ -29,7 +29,10 @@ type e_State struct {
 }
 
 type e_Communication struct {
-	interrupt      chan error
+	interrupt chan struct {
+		sockStruct e_workerValue
+		Error      error
+	}
 	valuePropagate chan e_workerValue
 }
 
