@@ -126,38 +126,39 @@ func resolveAiLLM(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 	fmt.Println("------------------")
 
 	if len(inpSock) != 3 || len(outSock) != 1 {
+		fmt.Println("not correct len")
 		return outSock, fmt.Errorf("Ai LLM requires exactly 3 inputs and 1 output")
 	}
 
-	// systemp prompt
-	inp0, ok := inpSock[0].Data.(string)
+	systemprompt, ok := inpSock[0].Data.(string)
 	if !ok {
 		err := fmt.Errorf("Incorrect DataType as input in ai LLM")
 		outSock[0].Error = err
 		return outSock, err
-
 	}
-	// userprompt
-	inp1, ok := inpSock[1].Data.(string)
+	userprompt, ok := inpSock[1].Data.(string)
 	if !ok {
 		err := fmt.Errorf("Incorrect DataType as input in ai LLM")
-		outSock[1].Error = err
+		outSock[0].Error = err
 		return outSock, err
-
 	}
-	// timeout
-	inp2, ok := inpSock[2].Data.(float64)
+	timeout, ok := inpSock[2].Data.(float64)
 	if !ok {
 		err := fmt.Errorf("Incorrect DataType as input in ai LLM")
-		outSock[2].Error = err
+		outSock[0].Error = err
 		return outSock, err
-
 	}
-	_ = inp2
 
-	// TODO: SEND data to ai
+	// fmt.Printf("%s,", systemprompt)
+	// fmt.Printf("%s,", userprompt)
+	// fmt.Printf("%v,", timeout)
 
-	outSock[0].Data = inp1 + inp0
+	result, err := llmService(systemprompt, userprompt, timeout)
+	if err != nil {
+		return outSock, err
+	}
+
+	outSock[0].Data = result.Message.Content
 	return outSock, nil
 }
 

@@ -1,5 +1,7 @@
 package engine
 
+import "fmt"
+
 //TODO: implement logging with different log levels
 
 //const LOGLEVEL int = 2
@@ -35,6 +37,7 @@ func executionManager(state *e_State) (map[string]e_Socket, error) {
 			for _, sock := range sockStruct.socket {
 				outPutSockMap[(sockStruct.nodeID + ":" + sock.ID)] = sock
 			}
+			fmt.Printf("interrupted:\n %+v \n", interruption.Error)
 			return outPutSockMap, nil
 
 		case sockStruct := <-engComm.valuePropagate:

@@ -25,4 +25,14 @@ func JsonRead(req *http.Request, updatedData any) error {
 		return err
 	}
 	return nil
+
+}
+
+func JsonResponseRead(res *http.Response, updatedData any) error {
+	err := json.NewDecoder(res.Body).Decode(updatedData)
+	if err != nil {
+		fmt.Printf("Error decoding json:\n %v \n", err)
+		return err
+	}
+	return nil
 }
