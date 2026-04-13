@@ -95,7 +95,7 @@ func createState(tree models.Tree) (e_State, error) {
 				return e_State{}, err
 			}
 
-			fmt.Printf("Node %s populated : %+v\n", node.Type, *state.NodeMap[node.ID])
+			//fmt.Printf("Node %s populated : %+v\n", node.Type, *state.NodeMap[node.ID])
 		}
 	}
 	return state, nil

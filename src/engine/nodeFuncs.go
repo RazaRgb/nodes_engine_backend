@@ -12,9 +12,11 @@ import (
 
 func resolveMathAdd(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 
-	fmt.Printf("input sockets in resolve mathadd: %+v \n", inpSock)
-	fmt.Printf("output sockets in resolve mathadd: %+v \n", outSock)
-	fmt.Println("------------------")
+	{ //logging off
+		//		fmt.Printf("input sockets in resolve mathadd: %+v \n", inpSock)
+		//		fmt.Printf("output sockets in resolve mathadd: %+v \n", outSock)
+		//		fmt.Println("------------------")
+	}
 
 	if len(inpSock) != 2 || len(outSock) != 1 {
 		return outSock, fmt.Errorf("MathAdd requires exactly 2 inputs and 1 output")
@@ -52,10 +54,10 @@ func resolveOutputLog(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error
 }
 
 func resolveMathMultiply(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
-	{ // logging
-		fmt.Printf("input sockets in resolve mathadd: %+v \n", inpSock)
-		fmt.Printf("output sockets in resolve mathadd: %+v \n", outSock)
-		fmt.Println("------------------")
+	{ // logging off
+		//	fmt.Printf("input sockets in resolve mathadd: %+v \n", inpSock)
+		//	fmt.Printf("output sockets in resolve mathadd: %+v \n", outSock)
+		//	fmt.Println("------------------")
 	}
 
 	if len(inpSock) != 2 || len(outSock) != 1 {
@@ -82,9 +84,11 @@ func resolveMathMultiply(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, er
 
 func resolveInputString(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 
-	fmt.Printf("input sockets in resolve inputString: %+v \n", inpSock)
-	fmt.Printf("output sockets in resolve inputString: %+v \n", outSock)
-	fmt.Println("------------------")
+	{ // logging off
+		//	fmt.Printf("input sockets in resolve inputString: %+v \n", inpSock)
+		//	fmt.Printf("output sockets in resolve inputString: %+v \n", outSock)
+		//	fmt.Println("------------------")
+	}
 
 	if len(inpSock) != 0 || len(outSock) != 1 {
 		return outSock, fmt.Errorf("inputNumber requires exactly 0 inputs and 1 output")
@@ -94,31 +98,21 @@ func resolveInputString(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, err
 
 func resolveStringConcat(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 
-	fmt.Printf("input sockets in resolve stringConcat: %+v \n", inpSock)
-	fmt.Printf("output sockets in resolve stringConcat: %+v \n", outSock)
-	fmt.Println("------------------")
+	{ //logging off
+		//	fmt.Printf("input sockets in resolve stringConcat: %+v \n", inpSock)
+		//	fmt.Printf("output sockets in resolve stringConcat: %+v \n", outSock)
+		//	fmt.Println("------------------")
+	}
 
 	if len(inpSock) != 2 || len(outSock) != 1 {
 		return outSock, fmt.Errorf("stringConcat requires exactly 2 inputs and 1 output")
 	}
 	inp0 := fmt.Sprint(inpSock[0].Data)
-	//inp0, ok := inpSock[0].Data.(string)
-	//if !ok {
-	//	err := fmt.Errorf("Incorrect DataType as input in stringConcat")
-	//	outSock[0].Error = err
-	//	return outSock, err
 
-	//}
 	inp1 := fmt.Sprint(inpSock[1].Data)
-	//inp1, ok := inpSock[1].Data.(string)
-	//if !ok {
-	//	err := fmt.Errorf("Incorrect DataType as input in stringConcat")
-	//	outSock[0].Error = err
-	//	return outSock, err
-
-	//}
 
 	outSock[0].Data = inp0 + inp1
+
 	return outSock, nil
 }
 
@@ -152,17 +146,11 @@ func resolveAiLLM(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 		return outSock, err
 	}
 
-	// fmt.Printf("%s,", systemprompt)
-	// fmt.Printf("%s,", userprompt)
-	// fmt.Printf("%v,", timeout)
-
-	//result, err := llmService(systemprompt, userprompt, timeout)
 	result, err := geminiService(systemprompt, userprompt, timeout)
 	if err != nil {
 		return outSock, err
 	}
 
-	//outSock[0].Data = result.Message.Content
 	outSock[0].Data = result
 	return outSock, nil
 }
@@ -171,15 +159,26 @@ func resolveCodeExecute(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, err
 
 	fmt.Printf("input sockets in resolve codeExecute: %+v \n", inpSock)
 	fmt.Printf("output sockets in resolve codeExecute: %+v \n", outSock)
-	fmt.Println("------------------")
 
-	str := ""
-	for i, _ := range inpSock {
-		inp := fmt.Sprint(inpSock[i].Data)
-		str += inp
+	//str := ""
+	//for i, _ := range inpSock {
+	//	inp := fmt.Sprint(inpSock[i].Data)
+	//	str += inp
+	//}
+	//outSock[0].Data = str
+
+	script, ok := inpSock[0].Data.(string)
+	if !ok {
+		return outSock, fmt.Errorf("Incorrect datatype in code socket")
 	}
-	outSock[0].Data = str
-	return outSock, nil
+
+	resultArr, err := gojaService(script, inpSock[1:], outSock)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("------------------")
+	return resultArr, nil
 }
 
 // -------------------------------
@@ -236,11 +235,6 @@ func popInputString(state *e_State, nodePtr *e_Node, jsonString string) error {
 		return fmt.Errorf("Incorrect Datatype in inputNumber")
 	}
 
-	//fmt.Printf("state.SockMap[e_SocketReference{: %+v \n", state.SockMap[e_SocketReference{
-	//	NodeID:   nodePtr.ID,
-	//	SocketID: "o1",
-	//}])
-
 	sockPtr, exists := state.SockMap[e_SocketReference{
 		NodeID:   nodePtr.ID,
 		SocketID: "o1",
@@ -272,22 +266,24 @@ func popCodeExecute(state *e_State, nodePtr *e_Node, jsonString string) error {
 	}
 	fmt.Printf("objVal values : %+v \n", objVal)
 
-	nodePtr.InpSockArr = make([]e_SocketReference, len(objVal.Inputs))
+	nodePtr.InpSockArr = make([]e_SocketReference, len(objVal.Inputs)+1)
 	nodePtr.OutSockArr = make([]e_SocketReference, len(objVal.Outputs))
 
-	{ //logs
-		fmt.Printf("%+v: ", len(objVal.Inputs))
-		fmt.Printf("%+v, ", len(objVal.Outputs))
-
-		fmt.Printf("%+v: ", len(nodePtr.InpSockArr))
-		fmt.Printf("%+v, \n", len(nodePtr.OutSockArr))
-	}
-
 	for i, _ := range nodePtr.InpSockArr {
-		sock := e_Socket{
-			Data: objVal.Inputs[i],
-			ID:   "i" + strconv.Itoa(i+1),
+		var sock e_Socket
+
+		if i == 0 {
+			sock = e_Socket{
+				Data: objVal.Code,
+				ID:   "i" + strconv.Itoa(i+1),
+			}
+		} else {
+			sock = e_Socket{
+				Data: objVal.Inputs[i-1],
+				ID:   "i" + strconv.Itoa(i+1),
+			}
 		}
+
 		sockref := e_SocketReference{
 			NodeID:   nodePtr.ID,
 			SocketID: "i" + strconv.Itoa(i+1),
@@ -299,7 +295,15 @@ func popCodeExecute(state *e_State, nodePtr *e_Node, jsonString string) error {
 
 		state.SockMap[nodePtr.InpSockArr[i]] = &sock
 
-		fmt.Printf("vall:::: %+v \n", *state.SockMap[nodePtr.InpSockArr[i]])
+		//fmt.Printf("vall:::: %+v \n", *state.SockMap[nodePtr.InpSockArr[i]])
+	}
+
+	{ //logs off
+		//	fmt.Printf("%+v: ", len(objVal.Inputs))
+		//	fmt.Printf("%+v, ", len(objVal.Outputs))
+
+		//	fmt.Printf("%+v: ", len(nodePtr.InpSockArr))
+		//	fmt.Printf("%+v, \n", len(nodePtr.OutSockArr))
 	}
 
 	fmt.Println()
@@ -320,7 +324,7 @@ func popCodeExecute(state *e_State, nodePtr *e_Node, jsonString string) error {
 
 		state.SockMap[nodePtr.OutSockArr[i]] = &sock
 
-		fmt.Printf("vall:::: %+v \n", *state.SockMap[nodePtr.OutSockArr[i]])
+		//fmt.Printf("vall:::: %+v \n", *state.SockMap[nodePtr.OutSockArr[i]])
 	}
 	return nil
 }
