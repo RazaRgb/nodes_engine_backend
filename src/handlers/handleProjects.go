@@ -19,7 +19,7 @@ func HandleGETProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	projList, err := db.GetProjectsInfo(email)
-	fmt.Printf("projlist un marshalled: \n%+v\n", projList)
+	//fmt.Printf("projlist un marshalled: \n%+v\n", projList)
 	if err != nil {
 		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
 		return

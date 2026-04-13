@@ -37,6 +37,7 @@ func main() {
 	mux.Handle("GET /api/projects", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjects)))
 	mux.Handle("POST /api/projects", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandlePOSTProject)))
 	mux.Handle("DELETE /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleDELETEProject)))
+
 	mux.Handle("POST /api/projects/{id}/run", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleRun)))
 
 	mux.Handle("GET /api/projects/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjectData)))
@@ -44,6 +45,6 @@ func main() {
 	mux.Handle("GET /api/projecttreeids/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjectTreeIDs)))
 
 	PORT := os.Getenv("PORT")
-	fmt.Printf("server listening at port %s \n\n\n\n", PORT)
+	fmt.Printf("server listening at port %s \n\n\n", PORT)
 	http.ListenAndServe(PORT, noCorsMux)
 }

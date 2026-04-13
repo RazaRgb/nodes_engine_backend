@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // func ResolveInputNumber([]engine.E_Socket)(engine.E_Socket){
@@ -100,20 +101,22 @@ func resolveStringConcat(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, er
 	if len(inpSock) != 2 || len(outSock) != 1 {
 		return outSock, fmt.Errorf("stringConcat requires exactly 2 inputs and 1 output")
 	}
-	inp0, ok := inpSock[0].Data.(string)
-	if !ok {
-		err := fmt.Errorf("Incorrect DataType as input in stringConcat")
-		outSock[0].Error = err
-		return outSock, err
+	inp0 := fmt.Sprint(inpSock[0].Data)
+	//inp0, ok := inpSock[0].Data.(string)
+	//if !ok {
+	//	err := fmt.Errorf("Incorrect DataType as input in stringConcat")
+	//	outSock[0].Error = err
+	//	return outSock, err
 
-	}
-	inp1, ok := inpSock[1].Data.(string)
-	if !ok {
-		err := fmt.Errorf("Incorrect DataType as input in stringConcat")
-		outSock[1].Error = err
-		return outSock, err
+	//}
+	inp1 := fmt.Sprint(inpSock[1].Data)
+	//inp1, ok := inpSock[1].Data.(string)
+	//if !ok {
+	//	err := fmt.Errorf("Incorrect DataType as input in stringConcat")
+	//	outSock[0].Error = err
+	//	return outSock, err
 
-	}
+	//}
 
 	outSock[0].Data = inp0 + inp1
 	return outSock, nil
@@ -153,12 +156,29 @@ func resolveAiLLM(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 	// fmt.Printf("%s,", userprompt)
 	// fmt.Printf("%v,", timeout)
 
-	result, err := llmService(systemprompt, userprompt, timeout)
+	//result, err := llmService(systemprompt, userprompt, timeout)
+	result, err := geminiService(systemprompt, userprompt, timeout)
 	if err != nil {
 		return outSock, err
 	}
 
-	outSock[0].Data = result.Message.Content
+	//outSock[0].Data = result.Message.Content
+	outSock[0].Data = result
+	return outSock, nil
+}
+
+func resolveCodeExecute(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
+
+	fmt.Printf("input sockets in resolve codeExecute: %+v \n", inpSock)
+	fmt.Printf("output sockets in resolve codeExecute: %+v \n", outSock)
+	fmt.Println("------------------")
+
+	str := ""
+	for i, _ := range inpSock {
+		inp := fmt.Sprint(inpSock[i].Data)
+		str += inp
+	}
+	outSock[0].Data = str
 	return outSock, nil
 }
 
@@ -234,5 +254,73 @@ func popInputString(state *e_State, nodePtr *e_Node, jsonString string) error {
 	}
 	sockPtr.Data = val
 	sockPtr.ID = "o1"
+	return nil
+}
+
+func popCodeExecute(state *e_State, nodePtr *e_Node, jsonString string) error {
+	jsonBytes := []byte(jsonString)
+	objVal := struct {
+		Inputs  []string `json:"inputs"`
+		Outputs []string `json:"outputs"`
+		Code    string   `json:"code"`
+	}{}
+
+	err := json.Unmarshal(jsonBytes, &objVal)
+	if err != nil {
+		fmt.Printf("Error decoding json:\n %v \n", err)
+		return err
+	}
+	fmt.Printf("objVal values : %+v \n", objVal)
+
+	nodePtr.InpSockArr = make([]e_SocketReference, len(objVal.Inputs))
+	nodePtr.OutSockArr = make([]e_SocketReference, len(objVal.Outputs))
+
+	{ //logs
+		fmt.Printf("%+v: ", len(objVal.Inputs))
+		fmt.Printf("%+v, ", len(objVal.Outputs))
+
+		fmt.Printf("%+v: ", len(nodePtr.InpSockArr))
+		fmt.Printf("%+v, \n", len(nodePtr.OutSockArr))
+	}
+
+	for i, _ := range nodePtr.InpSockArr {
+		sock := e_Socket{
+			Data: objVal.Inputs[i],
+			ID:   "i" + strconv.Itoa(i+1),
+		}
+		sockref := e_SocketReference{
+			NodeID:   nodePtr.ID,
+			SocketID: "i" + strconv.Itoa(i+1),
+		}
+
+		state.SockMap[sockref] = &sock
+
+		nodePtr.InpSockArr[i] = sockref
+
+		state.SockMap[nodePtr.InpSockArr[i]] = &sock
+
+		fmt.Printf("vall:::: %+v \n", *state.SockMap[nodePtr.InpSockArr[i]])
+	}
+
+	fmt.Println()
+
+	for i, _ := range nodePtr.OutSockArr {
+		sock := e_Socket{
+			Data: objVal.Outputs[i],
+			ID:   "o" + strconv.Itoa(i+1),
+		}
+		sockref := e_SocketReference{
+			NodeID:   nodePtr.ID,
+			SocketID: "o" + strconv.Itoa(i+1),
+		}
+
+		state.SockMap[sockref] = &sock
+
+		nodePtr.OutSockArr[i] = sockref
+
+		state.SockMap[nodePtr.OutSockArr[i]] = &sock
+
+		fmt.Printf("vall:::: %+v \n", *state.SockMap[nodePtr.OutSockArr[i]])
+	}
 	return nil
 }

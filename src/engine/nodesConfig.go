@@ -51,6 +51,11 @@ var nodeRegistry nodeReg = nodeReg{
 			inputCount:  3,
 			outputCount: 1,
 		},
+
+		"codeExecute": {
+			inputCount:  -1,
+			outputCount: -1,
+		},
 	},
 	resolvers: map[string]nodeResolver{
 		"mathAdd":      resolveMathAdd,
@@ -60,10 +65,12 @@ var nodeRegistry nodeReg = nodeReg{
 		"inputString":  resolveInputString,
 		"stringConcat": resolveStringConcat,
 		"aiLLM":        resolveAiLLM,
+		"codeExecute":  resolveCodeExecute,
 	},
 	populateSockets: map[string]sockPopulate{
 		"inputNumber": popInputNumber,
 		"inputString": popInputString,
+		"codeExecute": popCodeExecute,
 	},
 }
 

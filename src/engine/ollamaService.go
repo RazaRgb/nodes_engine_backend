@@ -24,7 +24,7 @@ type ChatRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
 	Stream   bool      `json:"stream"`
-	Options struct {
+	Options  struct {
 		Num_ctx int
 	}
 }
@@ -37,13 +37,13 @@ type Message struct {
 func llmService(systemPrompt string, userPrompt string, timeout float64) (ollamaChatResponse, error) {
 	timeout = min(timeout, 1800)
 	requestData := ChatRequest{
-		Model: "qwen2.5:7b",
+		Model: "qwen3:4b",
 		Messages: []Message{
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: userPrompt},
 		},
 		Stream: false,
-		Options: struct{Num_ctx int}{
+		Options: struct{ Num_ctx int }{
 			Num_ctx: 4096,
 		},
 	}

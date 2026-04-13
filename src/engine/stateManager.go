@@ -30,13 +30,21 @@ func createState(tree models.Tree) (e_State, error) {
 			return e_State{}, err
 		}
 
-		state.NodeMap[node.ID] = &e_Node{
-			ID:         node.ID,
-			NodeType:   node.Type,
-			InpSockArr: make([]e_SocketReference, nc.inputCount),
-			OutSockArr: make([]e_SocketReference, nc.outputCount),
+		if nc.inputCount != -1 && nc.outputCount != -1 {
+			state.NodeMap[node.ID] = &e_Node{
+				ID:         node.ID,
+				NodeType:   node.Type,
+				InpSockArr: make([]e_SocketReference, nc.inputCount),
+				OutSockArr: make([]e_SocketReference, nc.outputCount),
+			}
+		} else {
+			state.NodeMap[node.ID] = &e_Node{
+				ID:         node.ID,
+				NodeType:   node.Type,
+				InpSockArr: make([]e_SocketReference, 0),
+				OutSockArr: make([]e_SocketReference, 0),
+			}
 		}
-
 		// Create sockets
 		for i := range nc.outputCount {
 			sockID := "o" + strconv.Itoa(i+1)
@@ -83,9 +91,11 @@ func createState(tree models.Tree) (e_State, error) {
 		if found {
 			err := sockPopulate(&state, state.NodeMap[node.ID], node.Data.Value)
 			if err != nil {
-				fmt.Printf("error while inserting values in inputNodeSocket")
+				fmt.Printf("error while inserting values in inputNodeSocket: %+v\n", err)
 				return e_State{}, err
 			}
+
+			fmt.Printf("Node %s populated : %+v\n", node.Type, *state.NodeMap[node.ID])
 		}
 	}
 	return state, nil
