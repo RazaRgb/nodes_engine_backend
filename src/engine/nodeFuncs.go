@@ -186,6 +186,55 @@ func resolveCodeExecute(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, err
 	return resultArr, nil
 }
 
+func resolveIfBlock(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
+
+	{ //logging off
+		//	fmt.Printf("input sockets in resolve ifBlock: %+v \n", inpSock)
+		//	fmt.Printf("output sockets in resolve ifBlock: %+v \n", outSock)
+		//	fmt.Println("------------------")
+	}
+	isTrue := false
+
+	if len(inpSock) != 3 || len(outSock) != 1 {
+		return outSock, fmt.Errorf("ifBlock requires exactly 3 inputs and 1 output")
+	}
+	condition := inpSock[0].Data
+
+	switch val := condition.(type) {
+	case bool:
+		isTrue = val
+	case float64:
+		if val != 0 {
+			isTrue = true
+		}
+	case string:
+		if val == "" {
+			isTrue = false
+		} else if val == "true" {
+			isTrue = true
+		} else if val == "false" {
+			isTrue = false
+		} else {
+			isTrue = true
+		}
+	case nil:
+		isTrue = false
+	default:
+		isTrue = true
+	}
+
+	inp1 := inpSock[1].Data
+	inp2 := inpSock[2].Data
+
+	if isTrue {
+		outSock[0].Data = inp1
+	} else {
+		outSock[0].Data = inp2
+	}
+
+	return outSock, nil
+}
+
 // -------------------------------
 func popInputNumber(state *e_State, nodePtr *e_Node, jsonString string) error {
 	jsonBytes := []byte(jsonString)

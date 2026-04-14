@@ -24,7 +24,7 @@ func gojaService(inputScript string, inpSock []e_Socket, outSock []e_Socket) ([]
 	inputMap := make(map[string]any)
 
 	for _, insock := range inpSock {
-		inputMap[inputScript] = insock.Data
+		inputMap[insock.ID] = insock.Data
 	}
 
 	fn, ok := goja.AssertFunction(vm.Get("execute"))

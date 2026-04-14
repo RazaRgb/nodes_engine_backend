@@ -47,6 +47,11 @@ var nodeRegistry nodeReg = nodeReg{
 			outputCount: 1,
 		},
 
+		"ifBlock": {
+			inputCount:  3,
+			outputCount: 1,
+		},
+
 		"aiLLM": {
 			inputCount:  3,
 			outputCount: 1,
@@ -66,6 +71,7 @@ var nodeRegistry nodeReg = nodeReg{
 		"stringConcat": resolveStringConcat,
 		"aiLLM":        resolveAiLLM,
 		"codeExecute":  resolveCodeExecute,
+		"ifBlock":      resolveIfBlock,
 	},
 	populateSockets: map[string]sockPopulate{
 		"inputNumber": popInputNumber,
