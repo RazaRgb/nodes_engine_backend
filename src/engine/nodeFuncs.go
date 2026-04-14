@@ -50,7 +50,11 @@ func resolveOutputLog(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error
 	if len(inpSock) != 1 || len(outSock) != 0 {
 		return outSock, fmt.Errorf("outputLog requires exactly 1 input and 0 output")
 	}
-	return []e_Socket{}, nil
+
+	retSock := inpSock[0]
+	retSock.ID = "i1"
+
+	return []e_Socket{retSock}, nil
 }
 
 func resolveMathMultiply(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
@@ -148,6 +152,7 @@ func resolveAiLLM(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 
 	result, err := geminiService(systemprompt, userprompt, timeout)
 	if err != nil {
+		outSock[0].Error = err
 		return outSock, err
 	}
 
