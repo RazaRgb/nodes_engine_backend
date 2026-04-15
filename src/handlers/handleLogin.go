@@ -40,9 +40,10 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    tokenString,
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
-		Secure:   false,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
+		//SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 	})
 
 	w.Header().Set("Content-Type", "application/json")
