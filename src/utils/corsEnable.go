@@ -8,7 +8,7 @@ func EnableCORS(next http.Handler) http.Handler {
 
 	allowedOrigins := map[string]bool{
 		"http://localhost:5173":           true,
-		"https://nodes-engine-frontend.vercel.app/":  true,
+		"https://nodes-engine-frontend.vercel.app":  true,
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
