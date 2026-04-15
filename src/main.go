@@ -45,7 +45,7 @@ func main() {
 	mux.Handle("GET /api/projecttreeids/{id}", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGETProjectTreeIDs)))
 
 	PORT := os.Getenv("PORT")
-	PORT = ":"+ PORT
+	PORT = ":" + PORT
 	fmt.Printf("server listening at port %s \n\n\n", PORT)
 	http.ListenAndServe(PORT, noCorsMux)
 }

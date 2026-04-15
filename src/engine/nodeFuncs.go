@@ -174,12 +174,15 @@ func resolveCodeExecute(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, err
 
 	script, ok := inpSock[0].Data.(string)
 	if !ok {
-		return outSock, fmt.Errorf("Incorrect datatype in code socket")
+		err := fmt.Errorf("Incorrect datatype in code socket")
+		outSock[0].Error = err
+		return outSock, err
 	}
 
 	resultArr, err := gojaService(script, inpSock[1:], outSock)
 	if err != nil {
-		return nil, err
+		outSock[0].Error = err
+		return outSock, err
 	}
 
 	fmt.Println("------------------")

@@ -1,14 +1,15 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 )
 
 func EnableCORS(next http.Handler) http.Handler {
 
 	allowedOrigins := map[string]bool{
-		"http://localhost:5173":           true,
-		"https://nodes-engine-frontend.vercel.app":  true,
+		"http://localhost:5173":                    true,
+		"https://nodes-engine-frontend.vercel.app": true,
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -16,6 +17,8 @@ func EnableCORS(next http.Handler) http.Handler {
 
 		if allowedOrigins[origin] {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			fmt.Printf("not allowed cors : %+v\n ", origin)
 		}
 
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
