@@ -41,7 +41,14 @@ func HandleRun(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tree := requestStruct.Trees[0]
+	var tree models.Tree
+	if len(requestStruct.Trees) > 0 {
+		tree = requestStruct.Trees[0]
+	} else {
+		http.Error(w, "Empty tree list provided", http.StatusBadRequest)
+		fmt.Printf("unable to execute tree: empty tree list\n")
+		return
+	}
 
 	result, err := engine.ExecuteTree(tree)
 	if err != nil {
