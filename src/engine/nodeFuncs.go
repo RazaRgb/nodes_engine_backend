@@ -3,12 +3,10 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
+	//	"regexp"
+	//"backend/src/utils"
 	"strconv"
 )
-
-// func ResolveInputNumber([]engine.E_Socket)(engine.E_Socket){
-//
-// }
 
 func resolveMathAdd(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 

@@ -36,3 +36,7 @@ func JsonResponseRead(res *http.Response, updatedData any) error {
 	}
 	return nil
 }
+
+func P(msg string, obj any) {
+	fmt.Printf(msg+": %+v\n", obj)
+}

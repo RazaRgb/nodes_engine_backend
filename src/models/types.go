@@ -2,10 +2,13 @@ package models
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type User struct {
-	Email          string    `json:"email"` // primary key
+	Id             uuid.UUID `json:"userId"`
+	Email          string    `json:"email"`
 	Username       string    `json:"username"`
 	HashedPassword string    `json:"hashedPassword"`
 	CreationDate   time.Time `json:"creationDate"`
@@ -14,7 +17,7 @@ type User struct {
 type Project struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
-	Owner        string    `json:"owner"`
+	Owner        uuid.UUID `json:"owner"`
 	CreationDate time.Time `json:"creationDate"`
 	LastModified time.Time `json:"lastModified"`
 }

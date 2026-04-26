@@ -4,11 +4,14 @@ import (
 	"backend/src/models"
 	"context"
 	"fmt"
+
 	// "net/http"
+	"os"
+
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"os"
 )
 
 var DB *pgxpool.Pool
@@ -34,7 +37,8 @@ func InitDB() {
 
 	query := `
 	CREATE TABLE IF NOT EXISTS users (
-		email VARCHAR(255) PRIMARY KEY,
+		user_id UUID PRIMARY KEY,
+		email VARCHAR(255) UNIQUE NOT NULL,
 		username VARCHAR(100) NOT NULL,
 		hashedpass TEXT NOT NULL,
 		creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -43,7 +47,7 @@ func InitDB() {
 	CREATE TABLE IF NOT EXISTS projects (
 		id VARCHAR(255) PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
-    owner VARCHAR(255) NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+    owner UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
 		creation_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
 		last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 	);
@@ -109,8 +113,8 @@ func UserExists(email string, tx ...pgx.Tx) (bool, error) {
 
 func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 	insertUserQuery := `
-	INSERT INTO users (email, username, hashedpass)
-	VALUES ($1,$2,$3)
+	INSERT INTO users (email, username, hashedpass, user_id)
+	VALUES ($1,$2,$3,$4)
 	`
 	var err error
 	if len(tx) == 0 {
@@ -120,6 +124,7 @@ func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 			newUser.Email,
 			newUser.Username,
 			newUser.HashedPassword,
+			newUser.Id,
 		)
 	} else {
 		_, err = tx[0].Exec(
@@ -128,6 +133,7 @@ func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 			newUser.Email,
 			newUser.Username,
 			newUser.HashedPassword,
+			newUser.Id,
 		)
 	}
 
@@ -140,7 +146,7 @@ func InsertUser(newUser models.User, tx ...pgx.Tx) error {
 
 func GetUser(email string, tx ...pgx.Tx) (models.User, error) {
 	selectQuery := `
-	SELECT email, username, hashedpass, creation_date
+	SELECT email, username, hashedpass, creation_date, user_id
 	FROM users
 	WHERE email = $1
 	`
@@ -157,6 +163,7 @@ func GetUser(email string, tx ...pgx.Tx) (models.User, error) {
 		&user.Username,
 		&user.HashedPassword,
 		&user.CreationDate,
+		&user.Id,
 	)
 	if err != nil {
 		return user, fmt.Errorf("unable to get user %w", err)
@@ -165,7 +172,7 @@ func GetUser(email string, tx ...pgx.Tx) (models.User, error) {
 	return user, nil
 }
 
-func GetProjectsInfo(email string, tx ...pgx.Tx) ([]models.Project, error) {
+func GetProjectsInfo(id uuid.UUID, tx ...pgx.Tx) ([]models.Project, error) {
 	selectQuery := `
 	SELECT id, name, creation_date, last_modified
 	FROM projects
@@ -175,9 +182,9 @@ func GetProjectsInfo(email string, tx ...pgx.Tx) ([]models.Project, error) {
 	var rows pgx.Rows
 	var err error
 	if len(tx) == 0 {
-		rows, err = DB.Query(context.Background(), selectQuery, email)
+		rows, err = DB.Query(context.Background(), selectQuery, id)
 	} else {
-		rows, err = tx[0].Query(context.Background(), selectQuery, email)
+		rows, err = tx[0].Query(context.Background(), selectQuery, id)
 	}
 	if err != nil {
 		fmt.Printf("error in getting projlist from db")
@@ -242,6 +249,7 @@ func InsertProject(newProject models.Project, tx ...pgx.Tx) (models.Project, err
 	)
 	if err != nil {
 		fmt.Printf("error while inserting project into db %+v \n", err)
+		fmt.Printf("newProject %+v \n", newProject)
 		return newProject, err
 	}
 	return newProject, nil
@@ -316,7 +324,7 @@ func GetTreeIDsForProject(projID string, tx ...pgx.Tx) ([]string, error) {
 	return treeIDs, nil
 }
 
-func MatchProjectWithEmail(projID string, email string, tx ...pgx.Tx) (bool, error) {
+func MatchProjectWithUser(projID string, userID uuid.UUID, tx ...pgx.Tx) (bool, error) {
 	selectQuery := `
 	SELECT EXISTS (
 		SELECT 1
@@ -328,9 +336,9 @@ func MatchProjectWithEmail(projID string, email string, tx ...pgx.Tx) (bool, err
 	var err error
 
 	if len(tx) == 0 {
-		err = DB.QueryRow(context.Background(), selectQuery, projID, email).Scan(&found)
+		err = DB.QueryRow(context.Background(), selectQuery, projID, userID).Scan(&found)
 	} else {
-		err = tx[0].QueryRow(context.Background(), selectQuery, projID, email).Scan(&found)
+		err = tx[0].QueryRow(context.Background(), selectQuery, projID, userID).Scan(&found)
 	}
 	if err != nil {
 		return false, err

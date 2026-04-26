@@ -18,7 +18,12 @@ func HandleGETProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projList, err := db.GetProjectsInfo(email)
+	user, err := db.GetUser(email)
+	if err != nil {
+		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
+		return
+	}
+	projList, err := db.GetProjectsInfo(user.Id)
 	//fmt.Printf("projlist un marshalled: \n%+v\n", projList)
 	if err != nil {
 		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
@@ -37,17 +42,23 @@ func HandlePOSTProject(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
 		return
 	}
+	user, err := db.GetUser(email)
+	if err != nil {
+		http.Error(w, "Unable to get user from email", http.StatusInternalServerError)
+		return
+	}
 
+	utils.P("user from email", user)
 	newProj := models.Project{}
 	newTree := models.Tree{}
 
-	err := utils.JsonRead(r, &newProj)
+	err = utils.JsonRead(r, &newProj)
 	if err != nil {
 		http.Error(w, "unable to create project", http.StatusInternalServerError)
 		return
 	}
 
-	newProj.Owner = email
+	newProj.Owner = user.Id
 	newProj.ID = uuid.NewString()
 	newTree.ID = uuid.NewString()
 
@@ -153,20 +164,21 @@ func HandlePUTProjectData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to get projects", http.StatusInternalServerError)
 		return
 	}
+	user, err := db.GetUser(email)
 
 	requestStruct := struct {
 		ProjID string        `json:"project_id"`
 		Trees  []models.Tree `json:"tree_list"`
 	}{}
 
-	err := utils.JsonRead(r, &requestStruct)
+	err = utils.JsonRead(r, &requestStruct)
 	if err != nil {
 		http.Error(w, "unable to parse request", http.StatusBadRequest)
 		return
 	}
 	// fmt.Printf("\nprinting req struct  %+v \n\n", requestStruct)
 
-	found, err := db.MatchProjectWithEmail(requestStruct.ProjID, email)
+	found, err := db.MatchProjectWithUser(requestStruct.ProjID, user.Id)
 	if err != nil {
 		http.Error(w, "an error occured", http.StatusInternalServerError)
 		return

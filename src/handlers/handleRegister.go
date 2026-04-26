@@ -9,6 +9,8 @@ import (
 	"backend/src/db"
 	"backend/src/models"
 	"backend/src/utils"
+
+	"github.com/google/uuid"
 )
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
@@ -38,10 +40,18 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unable to create user", http.StatusInternalServerError)
 		return
 	}
+
+	id, err := uuid.NewUUID()
+	if err != nil {
+		fmt.Printf("Unable to generate UUID %+v \n", err)
+		http.Error(w, "unable to create user", http.StatusInternalServerError)
+		return
+	}
 	user := models.User{
 		Username:       username,
 		HashedPassword: hashedPassword,
 		Email:          email,
+		Id:             id,
 	}
 
 	err = db.InsertUser(user)

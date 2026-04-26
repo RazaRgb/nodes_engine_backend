@@ -29,7 +29,13 @@ func HandleRun(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		found, err := db.MatchProjectWithEmail(requestStruct.ProjID, email)
+		user, err := db.GetUser(email)
+		if err != nil {
+			http.Error(w, "unable to get userid from email", http.StatusBadRequest)
+			return
+		}
+
+		found, err := db.MatchProjectWithUser(requestStruct.ProjID, user.Id)
 		if err != nil {
 			http.Error(w, "error in matching email and proj", http.StatusInternalServerError)
 			return
