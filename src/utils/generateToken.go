@@ -24,3 +24,8 @@ func GenerateToken(email string) (string, error) {
 
 	return token.SignedString(jwtSecret)
 }
+
+func GetGmailToken(email string) ([]byte, error) {
+	fmt.Printf("gmail token getter reached")
+	return []byte{}, nil
+}

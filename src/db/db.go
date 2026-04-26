@@ -75,6 +75,17 @@ func InitDB() {
 		target VARCHAR(255) NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
 		target_handle VARCHAR(255) NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS service_tokens (
+		id VARCHAR(255) PRIMARY KEY,
+		provider_account_id VARCHAR(255) NOT NULL,
+    owner UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+		access_token BYTEA,
+		refresh_token BYTEA,
+		provider VARCHAR(80) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(owner, provider, provider_account_id)
+	);
 	`
 
 	// Execute the query using our connection pool

@@ -9,11 +9,13 @@ type nodeConfig struct {
 
 type nodeResolver func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error)
 type sockPopulate func(*e_State, *e_Node, string) error
+type serviceHandler func(*e_State, *e_Node) error
 
 type nodeReg struct {
 	config          map[string]nodeConfig
 	resolvers       map[string](nodeResolver)
 	populateSockets map[string](sockPopulate)
+	serviceHandlers map[string](serviceHandler)
 }
 
 var nodeRegistry nodeReg = nodeReg{
@@ -41,7 +43,6 @@ var nodeRegistry nodeReg = nodeReg{
 			inputCount:  0,
 			outputCount: 1,
 		},
-
 		"stringConcat": {
 			inputCount:  2,
 			outputCount: 1,
@@ -61,6 +62,11 @@ var nodeRegistry nodeReg = nodeReg{
 			inputCount:  -1,
 			outputCount: -1,
 		},
+
+		"fetchMails": {
+			inputCount:  2,
+			outputCount: 1,
+		},
 	},
 	resolvers: map[string]nodeResolver{
 		"mathAdd":      resolveMathAdd,
@@ -72,11 +78,15 @@ var nodeRegistry nodeReg = nodeReg{
 		"aiLLM":        resolveAiLLM,
 		"codeExecute":  resolveCodeExecute,
 		"ifBlock":      resolveIfBlock,
+		"fetchMails":   resolveFetchMails,
 	},
 	populateSockets: map[string]sockPopulate{
 		"inputNumber": popInputNumber,
 		"inputString": popInputString,
 		"codeExecute": popCodeExecute,
+	},
+	serviceHandlers: map[string]serviceHandler{
+		"fetchMails": serviceFetchMails,
 	},
 }
 
@@ -98,6 +108,14 @@ func getNodeResolver(nodeType string) (nodeResolver, error) {
 
 func getNodePopulateFunc(nodeType string) (sockPopulate, bool) {
 	f, found := nodeRegistry.populateSockets[nodeType]
+	if !found {
+		return nil, false
+	}
+	return f, true
+}
+
+func getNodeServiceCheckFunc(nodeType string) (serviceHandler, bool) {
+	f, found := nodeRegistry.serviceHandlers[nodeType]
 	if !found {
 		return nil, false
 	}

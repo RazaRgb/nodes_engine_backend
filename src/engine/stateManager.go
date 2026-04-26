@@ -94,7 +94,15 @@ func createState(tree models.Tree) (e_State, error) {
 				fmt.Printf("error while inserting values in inputNodeSocket: %+v\n", err)
 				return e_State{}, err
 			}
-
+			//fmt.Printf("Node %s populated : %+v\n", node.Type, *state.NodeMap[node.ID])
+		}
+		sockServiceCheck, found := getNodeServiceCheckFunc(node.Type)
+		if found {
+			err := sockServiceCheck(&state, state.NodeMap[node.ID])
+			if err != nil {
+				fmt.Printf("error while inserting values in inputNodeSocket: %+v\n", err)
+				return e_State{}, err
+			}
 			//fmt.Printf("Node %s populated : %+v\n", node.Type, *state.NodeMap[node.ID])
 		}
 	}
