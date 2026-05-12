@@ -6,7 +6,7 @@ import (
 	"google.golang.org/genai"
 )
 
-func geminiService(systemPrompt string, userPrompt string, timeout float64) (string, error) {
+func geminiService(systemPrompt string, userPrompt string, timeout float64, modelName string) (string, error) {
 
 	{
 		//	fmt.Printf("system prompt: %+v\n", systemPrompt)
@@ -37,7 +37,8 @@ func geminiService(systemPrompt string, userPrompt string, timeout float64) (str
 		ctx,
 		//"gemini-2.5-flash",
 		//"gemma-3-27b-it",
-		"gemma-4-31b-it",
+		modelName,
+		//"gemma-4-31b-it",
 		genai.Text(systemPrompt+"\n"+userPrompt),
 		config,
 	)

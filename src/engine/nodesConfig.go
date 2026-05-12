@@ -54,7 +54,7 @@ var nodeRegistry nodeReg = nodeReg{
 		},
 
 		"aiLLM": {
-			inputCount:  3,
+			inputCount:  4,
 			outputCount: 1,
 		},
 

@@ -124,7 +124,7 @@ func resolveAiLLM(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 	fmt.Printf("output sockets in resolve aiLLM: %+v \n", outSock)
 	fmt.Println("------------------")
 
-	if len(inpSock) != 3 || len(outSock) != 1 {
+	if len(inpSock) != 4 || len(outSock) != 1 {
 		fmt.Println("not correct len")
 		return outSock, fmt.Errorf("Ai LLM requires exactly 3 inputs and 1 output")
 	}
@@ -147,8 +147,18 @@ func resolveAiLLM(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
 		outSock[0].Error = err
 		return outSock, err
 	}
+	modelName, ok := inpSock[3].Data.(string)
+	if !ok {
+		if inpSock[3].Data == nil {
+			modelName = "gemma-4-31b-it"
+		} else {
+			err := fmt.Errorf("Incorrect DataType as input in ai LLM")
+			outSock[0].Error = err
+			return outSock, err
+		}
+	}
 
-	result, err := geminiService(systemprompt, userprompt, timeout)
+	result, err := geminiService(systemprompt, userprompt, timeout, modelName)
 	if err != nil {
 		outSock[0].Error = err
 		return outSock, err
