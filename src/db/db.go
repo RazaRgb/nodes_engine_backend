@@ -266,7 +266,7 @@ func InsertProject(newProject models.Project, tx ...pgx.Tx) (models.Project, err
 	return newProject, nil
 }
 
-func DeleteProject(projectID string, userID string, tx ...pgx.Tx) error {
+func DeleteProject(projectID string, userID uuid.UUID, tx ...pgx.Tx) error {
 	deleteQuery := `
 	DELETE FROM projects
 	WHERE id = $1 AND owner = $2
