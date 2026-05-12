@@ -266,7 +266,7 @@ func InsertProject(newProject models.Project, tx ...pgx.Tx) (models.Project, err
 	return newProject, nil
 }
 
-func DeleteProject(projectID string, email string, tx ...pgx.Tx) error {
+func DeleteProject(projectID string, userID string, tx ...pgx.Tx) error {
 	deleteQuery := `
 	DELETE FROM projects
 	WHERE id = $1 AND owner = $2
@@ -278,14 +278,14 @@ func DeleteProject(projectID string, email string, tx ...pgx.Tx) error {
 			context.Background(),
 			deleteQuery,
 			projectID,
-			email,
+			userID,
 		)
 	} else {
 		result, err = tx[0].Exec(
 			context.Background(),
 			deleteQuery,
 			projectID,
-			email,
+			userID,
 		)
 	}
 	if err != nil {

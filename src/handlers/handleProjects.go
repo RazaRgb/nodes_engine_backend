@@ -99,9 +99,15 @@ func HandleDELETEProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err := db.GetUser(email)
+	if err != nil {
+		http.Error(w, "Unable to get user", http.StatusInternalServerError)
+		return
+	}
+
 	projID := r.PathValue("id")
 
-	err := db.DeleteProject(projID, email)
+	err = db.DeleteProject(projID, user.Id)
 	if err != nil {
 		http.Error(w, "Unable to delete project", http.StatusInternalServerError)
 		fmt.Printf("Errored while deleting project %+v \n", err)
