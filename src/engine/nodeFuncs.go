@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
+
 	//	"regexp"
 	//"backend/src/utils"
 	"strconv"
@@ -236,11 +237,11 @@ func resolveIfBlock(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) 
 	return outSock, nil
 }
 
-func resolveFetchMails(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
-	fmt.Printf("fetchmail resolver reached")
+func resolveFetchMail(inpSock []e_Socket, outSock []e_Socket) ([]e_Socket, error) {
+	fmt.Printf("fetchmail resolver reached\n")
 	// TODO: Implement this
-	if len(inpSock) != 0 || len(outSock) != 1 {
-		return outSock, fmt.Errorf("inputNumber requires exactly 0 inputs and 1 output")
+	if len(inpSock) != 2 || len(outSock) != 1 {
+		return outSock, fmt.Errorf("fetchMail requires exactly 2 inputs and 1 output")
 	}
 	return outSock, nil
 }
@@ -394,11 +395,3 @@ func popCodeExecute(state *e_State, nodePtr *e_Node, jsonString string) error {
 }
 
 // -------------------------------
-func serviceFetchMails(state *e_State, nodePtr *e_Node) error {
-	// TODO: If service database doesnt have the required access token, initiate access token flow.
-
-	fmt.Printf("fetchmail serviceCheck reached")
-	// token := db.
-	// token := utils.GetGmailToken()
-	return nil
-}

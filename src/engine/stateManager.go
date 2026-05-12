@@ -6,23 +6,26 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
-func createState(tree models.Tree) (e_State, error) {
+func createState(tree models.Tree, userID uuid.UUID) (e_State, error) {
 
 	var state e_State
 	state = e_State{
-		NodeMap:     make(map[string]*e_Node),
-		DegMap:      make(map[string]int),
-		AdjList:     make(map[e_SocketReference][]e_SocketReference),
-		SockMap:     make(map[e_SocketReference]*e_Socket, 100),
-		nodeCounter: 0,
+		NodeMap:       make(map[string]*e_Node),
+		DegMap:        make(map[string]int),
+		AdjList:       make(map[e_SocketReference][]e_SocketReference),
+		SockMap:       make(map[e_SocketReference]*e_Socket, 100),
+		nodeCounter:   0,
+		serviceTokens: make(map[string]any),
 	}
 
-	//defer func() {
-	//	printEngineState(&state)
-	//	fmt.Printf("sockRefMap dump : \n %+v \n", state.SockMap)
-	//}()
+	defer func() {
+		//	printEngineState(&state)
+		//	fmt.Printf("sockRefMap dump : \n %+v \n", state.SockMap)
+	}()
 
 	for _, node := range tree.Nodes {
 		nc, err := getNodeConfig(node.Type)
@@ -98,12 +101,13 @@ func createState(tree models.Tree) (e_State, error) {
 		}
 		sockServiceCheck, found := getNodeServiceCheckFunc(node.Type)
 		if found {
-			err := sockServiceCheck(&state, state.NodeMap[node.ID])
+			token, err := sockServiceCheck(userID)
 			if err != nil {
-				fmt.Printf("error while inserting values in inputNodeSocket: %+v\n", err)
+				fmt.Printf("unable to set service", err)
 				return e_State{}, err
 			}
-			//fmt.Printf("Node %s populated : %+v\n", node.Type, *state.NodeMap[node.ID])
+			state.serviceTokens[node.Type] = token
+			fmt.Printf("Node %s Service Enabled : %+v\n", node.Type, *state.NodeMap[node.ID])
 		}
 	}
 	return state, nil

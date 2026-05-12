@@ -22,6 +22,17 @@ type Project struct {
 	LastModified time.Time `json:"lastModified"`
 }
 
+type AccessToken struct {
+	ID                string
+	ProviderAccountID string
+	Provider          string
+	Owner             uuid.UUID
+	Token             []byte
+	RefreshToken      []byte
+	Expiry            time.Time
+	CredentialType    string
+}
+
 // -----------------------------------------
 
 type Position struct {

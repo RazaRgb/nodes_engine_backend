@@ -6,7 +6,7 @@ import (
 	// "log"
 	// "golang.org/x/crypto/bcrypt"
 
-	"fmt"
+	//	"fmt"
 	"os"
 	"time"
 
@@ -23,9 +23,4 @@ func GenerateToken(email string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(jwtSecret)
-}
-
-func GetGmailToken(email string) ([]byte, error) {
-	fmt.Printf("gmail token getter reached")
-	return []byte{}, nil
 }

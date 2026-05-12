@@ -16,6 +16,7 @@ func HandleRun(w http.ResponseWriter, r *http.Request) {
 		Trees  []models.Tree `json:"tree_list"`
 	}{}
 
+	var user models.User
 	{ // validation and all
 		email, ok := utils.GetEmailFromContext(r.Context())
 		if !ok {
@@ -29,7 +30,7 @@ func HandleRun(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user, err := db.GetUser(email)
+		user, err = db.GetUser(email)
 		if err != nil {
 			http.Error(w, "unable to get userid from email", http.StatusBadRequest)
 			return
@@ -56,7 +57,7 @@ func HandleRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := engine.ExecuteTree(tree)
+	result, err := engine.ExecuteTree(tree, user.Id)
 	if err != nil {
 		http.Error(w, "error while execution", http.StatusBadRequest)
 		fmt.Printf("unable to execute tree: \n %+v \n", err)

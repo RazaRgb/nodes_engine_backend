@@ -84,6 +84,7 @@ func InitDB() {
 		refresh_token BYTEA,
 		provider VARCHAR(80) NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		credential_type VARCHAR(20) NOT NULL DEFAULT 'oauth2',
 		UNIQUE(owner, provider, provider_account_id)
 	);
 	`
@@ -355,4 +356,82 @@ func MatchProjectWithUser(projID string, userID uuid.UUID, tx ...pgx.Tx) (bool, 
 		return false, err
 	}
 	return found, err
+}
+
+func GetServiceAccessToken(owner uuid.UUID, prov string, provAccId string, tx ...pgx.Tx) (models.AccessToken, error) {
+	selectQuery := `
+	SELECT id, provider_account_id, owner, access_token, refresh_token, provider, created_at
+	FROM service_tokens
+	WHERE owner = $1 AND provider = $2 AND provider_account_id = $3
+	`
+
+	accessToken := models.AccessToken{}
+	var row pgx.Row
+	var err error
+
+	if len(tx) == 0 {
+		row = DB.QueryRow(context.Background(), selectQuery, owner, prov, provAccId)
+	} else {
+		row = tx[0].QueryRow(context.Background(), selectQuery, owner, prov, provAccId)
+	}
+
+	err = row.Scan(
+		&accessToken.ID,
+		&accessToken.ProviderAccountID,
+		&accessToken.Owner,
+		&accessToken.Token,
+		&accessToken.RefreshToken,
+		&accessToken.Provider,
+		&accessToken.Expiry,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Printf("Auth required %s", prov)
+			return models.AccessToken{}, err
+		}
+		fmt.Printf("error scanning access token: %+v\n", err)
+		return models.AccessToken{}, err
+	}
+	return accessToken, nil
+}
+
+func UpdateServiceAccessToken(token models.AccessToken, tx ...pgx.Tx) error {
+	updateQuery := `
+	UPDATE service_tokens
+	SET access_token = $1, refresh_token = $2
+	WHERE owner = $3 AND provider = $4 AND provider_account_id = $5
+	`
+
+	var err error
+	if len(tx) == 0 {
+		_, err = DB.Exec(context.Background(), updateQuery, token.Token, token.RefreshToken, token.Owner, token.Provider, token.ProviderAccountID)
+	} else {
+		_, err = tx[0].Exec(context.Background(), updateQuery, token.Token, token.RefreshToken, token.Owner, token.Provider, token.ProviderAccountID)
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to update service access token: %w", err)
+	}
+
+	return nil
+}
+
+func InsertServiceAccessToken(token models.AccessToken, tx ...pgx.Tx) error {
+	insertQuery := `
+	INSERT INTO service_tokens (id, provider_account_id, owner, access_token, refresh_token, provider)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	`
+
+	var err error
+	if len(tx) == 0 {
+		_, err = DB.Exec(context.Background(), insertQuery, token.ID, token.ProviderAccountID, token.Owner, token.Token, token.RefreshToken, token.Provider)
+	} else {
+		_, err = tx[0].Exec(context.Background(), insertQuery, token.ID, token.ProviderAccountID, token.Owner, token.Token, token.RefreshToken, token.Provider)
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to insert service access token: %w", err)
+	}
+
+	return nil
 }

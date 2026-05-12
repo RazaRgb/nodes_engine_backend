@@ -1,6 +1,11 @@
 package engine
 
-import "fmt"
+import (
+	"backend/src/models"
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 type nodeConfig struct {
 	inputCount  int
@@ -9,7 +14,8 @@ type nodeConfig struct {
 
 type nodeResolver func(inputSocks []e_Socket, outputSocks []e_Socket) ([]e_Socket, error)
 type sockPopulate func(*e_State, *e_Node, string) error
-type serviceHandler func(*e_State, *e_Node) error
+type serviceType string
+type serviceFunc func(uuid.UUID) (models.AccessToken, error)
 
 type nodeReg struct {
 	config          map[string]nodeConfig
@@ -63,7 +69,7 @@ var nodeRegistry nodeReg = nodeReg{
 			outputCount: -1,
 		},
 
-		"fetchMails": {
+		"fetchMail": {
 			inputCount:  2,
 			outputCount: 1,
 		},
@@ -78,15 +84,15 @@ var nodeRegistry nodeReg = nodeReg{
 		"aiLLM":        resolveAiLLM,
 		"codeExecute":  resolveCodeExecute,
 		"ifBlock":      resolveIfBlock,
-		"fetchMails":   resolveFetchMails,
+		"fetchMail":    resolveFetchMail,
 	},
 	populateSockets: map[string]sockPopulate{
 		"inputNumber": popInputNumber,
 		"inputString": popInputString,
 		"codeExecute": popCodeExecute,
 	},
-	serviceHandlers: map[string]serviceHandler{
-		"fetchMails": serviceFetchMails,
+	serviceHandlers: map[string]serviceType{
+		"fetchMail": "google",
 	},
 }
 
@@ -114,10 +120,13 @@ func getNodePopulateFunc(nodeType string) (sockPopulate, bool) {
 	return f, true
 }
 
-func getNodeServiceCheckFunc(nodeType string) (serviceHandler, bool) {
+func getNodeServiceCheckFunc(nodeType string) (serviceFunc, bool) {
+	lookup := map[serviceType](serviceFunc){
+		"google": getGoogleAuthToken,
+	}
 	f, found := nodeRegistry.serviceHandlers[nodeType]
 	if !found {
 		return nil, false
 	}
-	return f, true
+	return lookup[f], true
 }

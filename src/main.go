@@ -28,6 +28,9 @@ func main() {
 	mux.HandleFunc("/api/register", handlers.HandleRegister)
 	mux.HandleFunc("/api/login", handlers.HandleLogin)
 
+	mux.HandleFunc("GET /api/auth/google/callback", handlers.HandleGoogleAuthCallback)
+	mux.Handle("GET /api/auth/google/login", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGoogleLogin)))
+
 	// private routes
 	mux.Handle("/api/logout", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleLogout)))
 	// mux.Handle("/api/graph", utils.AuthenticateRequest(http.HandlerFunc(handlers.HandleGraph)))

@@ -1,7 +1,5 @@
 package engine
 
-import ()
-
 type e_Socket struct {
 	ID    string `json:"id"`
 	Data  any    `json:"data"`
@@ -21,11 +19,12 @@ type e_Node struct {
 }
 
 type e_State struct {
-	NodeMap     map[string]*e_Node `json:"nodeMap"`
-	SockMap     map[e_SocketReference]*e_Socket
-	DegMap      map[string]int                              `json:"degMap"`
-	AdjList     map[e_SocketReference]([]e_SocketReference) `json:"AdjList"` //directional mapping of socket connections
-	nodeCounter int
+	NodeMap       map[string]*e_Node `json:"nodeMap"`
+	SockMap       map[e_SocketReference]*e_Socket
+	DegMap        map[string]int                              `json:"degMap"`
+	AdjList       map[e_SocketReference]([]e_SocketReference) `json:"AdjList"` //directional mapping of socket connections
+	nodeCounter   int
+	serviceTokens map[string](any)
 }
 
 type e_Communication struct {
