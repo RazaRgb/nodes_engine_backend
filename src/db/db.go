@@ -64,7 +64,8 @@ func InitDB() {
 		pos_x REAL NOT NULL,
 		pos_y REAL NOT NULL,
 		label TEXT NOT NULL,
-		value TEXT
+		value TEXT,
+		group_id TEXT
 	);
 
 	CREATE TABLE IF NOT EXISTS edges (

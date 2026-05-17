@@ -30,8 +30,9 @@ type Position struct {
 }
 
 type Data struct {
-	Label string `json:"label"`
-	Value string `json:"value"` //stored in db as json
+	Label   string `json:"label"`
+	Value   string `json:"value"` //stored in db as json
+	GroupID string `json:"groupID"`
 }
 
 // -----------------------------------------

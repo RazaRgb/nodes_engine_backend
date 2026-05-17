@@ -23,11 +23,12 @@ func GetTreeFromDB(treeID string, tx pgx.Tx) (models.Tree, error) {
 
 	return tree, nil
 }
+
 func getNodesFromDB(treeID string, tx pgx.Tx) ([]models.Node, error) {
 	var nodes []models.Node
 
 	selectQuery := `
-	SELECT id, type, pos_x, pos_y, label, value FROM nodes WHERE belongs_to = $1
+	SELECT id, type, pos_x, pos_y, label, value, group_id FROM nodes WHERE belongs_to = $1
 	`
 
 	rows, err := tx.Query(context.Background(), selectQuery, treeID)
@@ -48,6 +49,7 @@ func getNodesFromDB(treeID string, tx pgx.Tx) ([]models.Node, error) {
 			&node.Pos.Y,
 			&node.Data.Label,
 			&node.Data.Value,
+			&node.Data.GroupID,
 		)
 		if err != nil {
 			fmt.Printf("error scanning nodes in get nodes query: %+v\n", err)
@@ -134,8 +136,8 @@ func InsertTreeContentInDB(updatedTree models.Tree, tx pgx.Tx) error {
 
 func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 	insertNodeQuery := `
-	INSERT INTO nodes (belongs_to, id, type, pos_x, pos_y, label, value)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)
+	INSERT INTO nodes (belongs_to, id, type, pos_x, pos_y, label, value, group_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 	_, err := tx.Exec(
 		context.Background(),
@@ -147,6 +149,7 @@ func saveNodeToDB(node models.Node, treeID string, tx pgx.Tx) error {
 		node.Pos.Y,
 		node.Data.Label,
 		node.Data.Value,
+		node.Data.GroupID,
 	)
 	if err != nil {
 		fmt.Printf("Failed to execute node INSERT \n %+v\n", err)
